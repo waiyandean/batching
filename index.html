@@ -150,7 +150,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <body>
 <header class="app-header">
   <div class="app-title">Batch <span>Record</span></div>
-  <div class="sync-badge" id="sync-status">● sheets</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="temp-log.html" id="temp-log-link" style="font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;display:none;">🌡 Temp Log <span id="pending-temps-count"></span></a>
+    <div class="sync-badge" id="sync-status">● sheets</div>
+  </div>
 </header>
 <div class="tabs">
   <button class="tab active" onclick="showTab('record')" id="tab-record">New Record</button>
@@ -219,30 +222,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
           <span class="temp-unit">°C</span>
         </div>
-      </div>
-
-      <!-- Cooking & cooling (shown for cooked products only) -->
-      <div class="card" id="cooking-card" style="display:none;">
-        <div class="card-label">Cooking &amp; cooling</div>
-        <div class="field-row" style="margin-bottom:0;">
-          <div class="field" style="margin-bottom:0;">
-            <label>Cooking temp</label>
-            <div class="temp-wrap">
-              <input type="number" id="r-cook-temp" step="0.1" placeholder="e.g. 100" oninput="updateCookBadge()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
-              <span class="temp-unit">°C</span>
-            </div>
-            <div id="cook-badge" class="temp-badge" style="display:none;"></div>
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Cooling temp</label>
-            <div class="temp-wrap">
-              <input type="number" id="r-cool-temp" step="0.1" placeholder="e.g. 4" oninput="updateCoolBadge()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
-              <span class="temp-unit">°C</span>
-            </div>
-            <div id="cool-badge" class="temp-badge" style="display:none;"></div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:var(--text-hint);margin-top:10px;">Target: cooking ≥ 100°C · cooling ≤ 8°C</div>
       </div>
 
       <!-- Label check -->
@@ -430,6 +409,7 @@ async function load(){
   if(settings.scriptUrl) updateSyncBadge('ready');
   renderProductGrid();
   renderProductList();
+  updatePendingBadge();
 }
 
 function saveLocalSettings(){localStorage.setItem(SK_SETTINGS,JSON.stringify(settings));}
@@ -551,13 +531,6 @@ function selectProduct(id){
   // Reset other fields
   document.getElementById('r-product-batch').value='';
   document.getElementById('r-temp').value='';
-  // Cooking/cooling card
-  const isCooked=p.category==='cooked';
-  document.getElementById('cooking-card').style.display=isCooked?'':'none';
-  document.getElementById('r-cook-temp').value='';
-  document.getElementById('r-cool-temp').value='';
-  document.getElementById('cook-badge').style.display='none';
-  document.getElementById('cool-badge').style.display='none';
   // Label reference
   const labelRefBox=document.getElementById('label-ref-box');
   if(p.labelUrl){
@@ -581,25 +554,25 @@ function deselectProduct(){
   document.getElementById('record-form').style.display='none';
 }
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
-function updateCookBadge(){
-  const v=parseFloat(document.getElementById('r-cook-temp').value);
-  const el=document.getElementById('cook-badge');
-  if(isNaN(v)){el.style.display='none';return;}
-  el.style.display='';
-  if(v>=100){el.className='temp-badge temp-ok';el.textContent='✓ '+v+'°C — target reached';}
-  else if(v>=75){el.className='temp-badge temp-warn';el.textContent='⚠ '+v+'°C — below 100°C target';}
-  else{el.className='temp-badge temp-bad';el.textContent='✗ '+v+'°C — too low';}
+function updatePendingBadge(){
+  const cutoff=Date.now()-48*60*60*1000;
+  const pending=batchRecords.filter(r=>
+    r.productCategory==='cooked'&&
+    new Date(r.savedAt).getTime()>cutoff&&
+    (r.cookTemp==null||r.coolTemp==null)
+  ).length;
+  const link=document.getElementById('temp-log-link');
+  const countEl=document.getElementById('pending-temps-count');
+  if(pending>0){
+    link.style.display='';
+    link.style.borderColor='#f0d88a';
+    link.style.color='var(--warn-text)';
+    link.style.background='var(--warn-bg)';
+    countEl.textContent='('+pending+')';
+  }else{
+    link.style.display='none';
+  }
 }
-function updateCoolBadge(){
-  const v=parseFloat(document.getElementById('r-cool-temp').value);
-  const el=document.getElementById('cool-badge');
-  if(isNaN(v)){el.style.display='none';return;}
-  el.style.display='';
-  if(v<=8){el.className='temp-badge temp-ok';el.textContent='✓ '+v+'°C — safely cooled';}
-  else if(v<=12){el.className='temp-badge temp-warn';el.textContent='⚠ '+v+'°C — slightly warm';}
-  else{el.className='temp-badge temp-bad';el.textContent='✗ '+v+'°C — too warm';}
-}
-
 // ── Submit record ──
 async function submitRecord(){
   const date=document.getElementById('r-date').value;
@@ -610,9 +583,6 @@ async function submitRecord(){
   const labelCheck=document.getElementById('r-label-check').checked;
   const notes=document.getElementById('r-notes').value.trim();
   const p=products.find(x=>x.id===selectedProductId);
-  const isCooked=p&&p.category==='cooked';
-  const cookTemp=isCooked?document.getElementById('r-cook-temp').value:'';
-  const coolTemp=isCooked?document.getElementById('r-cool-temp').value:'';
   const err=document.getElementById('err-record');
   const missing=[];
   if(!date)missing.push('date');
@@ -620,8 +590,6 @@ async function submitRecord(){
   if(!staff)missing.push('staff name');
   if(!productBatch)missing.push('product batch number');
   if(!temp)missing.push('finished product temperature');
-  if(isCooked&&!cookTemp)missing.push('cooking temperature');
-  if(isCooked&&!coolTemp)missing.push('cooling temperature');
   if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
   err.style.display='none';
 
@@ -642,15 +610,14 @@ async function submitRecord(){
     id:uid(),date,site,staff,product:p.name,productCategory:p.category||'standard',productBatch,
     ingredientBatches,packagingBatches,
     temp:parseFloat(temp),
-    cookTemp:isCooked&&cookTemp?parseFloat(cookTemp):null,
-    coolTemp:isCooked&&coolTemp?parseFloat(coolTemp):null,
+    cookTemp:null,coolTemp:null,cookLoggedAt:null,coolLoggedAt:null,
     labelCheck,notes,savedAt:now,
-    // pass structure so Apps Script can build correct columns
     ingredientNames:(p.ingredients||[]),
     pkgLabels:pkgFields
   };
   batchRecords.unshift(record);
   persistRecords();
+  updatePendingBadge();
   showToast('Batch record saved ✓');
   deselectProduct();
 
