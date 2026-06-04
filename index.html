@@ -128,6 +128,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .empty{text-align:center;padding:48px 16px;color:var(--text-muted);font-size:14px;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--accent-fg);padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;white-space:nowrap;}
 .toast.show{opacity:1;}
+
+/* Product button with photo */
+.product-btn{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.product-btn-photo{width:52px;height:52px;border-radius:6px;object-fit:cover;display:block;}
+.product-btn-photo-placeholder{width:52px;height:52px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;}
+/* Temperature feedback badges */
+.temp-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;border-radius:20px;padding:3px 10px;margin-top:6px;}
+.temp-ok{background:var(--success-bg);color:var(--success-text);border:1px solid #b2d9b2;}
+.temp-warn{background:var(--warn-bg);color:var(--warn-text);border:1px solid #f0d88a;}
+.temp-bad{background:var(--danger-bg);color:var(--danger-text);border:1px solid #f5b8b3;}
+/* Master label reference */
+.label-ref-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;text-align:center;}
+.label-ref-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);text-decoration:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;background:var(--surface);}
+.label-ref-btn:active{background:var(--bg);}
+/* Category badges */
+.cat-standard{font-size:10px;font-family:monospace;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);border-radius:20px;padding:2px 8px;vertical-align:middle;}
+.cat-cooked{font-size:10px;font-family:monospace;background:var(--warn-bg);color:var(--warn-text);border:1px solid #f0d88a;border-radius:20px;padding:2px 8px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -165,12 +182,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <!-- Form (shown after product selected) -->
     <div id="record-form" style="display:none;">
       <!-- Product banner -->
-      <div style="background:var(--accent);color:var(--accent-fg);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
-        <div>
+      <div style="background:var(--accent);color:var(--accent-fg);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div id="form-product-photo-wrap" style="display:none;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
           <div style="font-size:11px;font-family:monospace;opacity:.7;margin-bottom:2px;">PRODUCT</div>
           <div style="font-size:16px;font-weight:500;" id="form-product-name"></div>
+          <div id="form-product-category" style="font-size:11px;font-family:monospace;opacity:.65;margin-top:3px;"></div>
         </div>
-        <button onclick="deselectProduct()" style="background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;">Change</button>
+        <button onclick="deselectProduct()" style="background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;flex-shrink:0;">Change</button>
       </div>
 
       <!-- Product batch number -->
@@ -202,12 +221,42 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
       </div>
 
+      <!-- Cooking & cooling (shown for cooked products only) -->
+      <div class="card" id="cooking-card" style="display:none;">
+        <div class="card-label">Cooking &amp; cooling</div>
+        <div class="field-row" style="margin-bottom:0;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Cooking temp</label>
+            <div class="temp-wrap">
+              <input type="number" id="r-cook-temp" step="0.1" placeholder="e.g. 100" oninput="updateCookBadge()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
+              <span class="temp-unit">°C</span>
+            </div>
+            <div id="cook-badge" class="temp-badge" style="display:none;"></div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Cooling temp</label>
+            <div class="temp-wrap">
+              <input type="number" id="r-cool-temp" step="0.1" placeholder="e.g. 4" oninput="updateCoolBadge()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
+              <span class="temp-unit">°C</span>
+            </div>
+            <div id="cool-badge" class="temp-badge" style="display:none;"></div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-hint);margin-top:10px;">Target: cooking ≥ 100°C · cooling ≤ 8°C</div>
+      </div>
+
       <!-- Label check -->
       <div class="card">
         <div class="card-label">Label check</div>
+        <div id="label-ref-box" class="label-ref-box" style="display:none;">
+          <div style="font-size:10px;font-family:monospace;color:var(--text-muted);margin-bottom:8px;letter-spacing:.06em;">MASTER LABEL REFERENCE</div>
+          <a id="label-ref-link" href="#" target="_blank" class="label-ref-btn">
+            <span style="font-size:16px;">↗</span><span>View master label</span>
+          </a>
+        </div>
         <label class="check-box" id="label-check-wrap">
           <input type="checkbox" id="r-label-check" onchange="document.getElementById('label-check-wrap').classList.toggle('checked',this.checked)"/>
-          <span>Labels checked and correct</span>
+          <span id="label-check-text">Labels checked and correct</span>
         </label>
       </div>
 
@@ -249,11 +298,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div class="card-label" id="add-form-title">New product</div>
         <div class="field"><label>Product name</label><input type="text" id="s-prod-name" placeholder="e.g. Chicken Ramen"/></div>
         <div class="field">
+          <label>Product category</label>
+          <select id="s-prod-category">
+            <option value="standard">Standard (no cooking required)</option>
+            <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Packaging type</label>
           <select id="s-pkg-type">
             <option value="standard">Standard — Pouch + Box</option>
             <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
           </select>
+        </div>
+        <div class="field">
+          <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional — paste a link to the reference label</span></label>
+          <input type="url" id="s-label-url" placeholder="https://…"/>
         </div>
         <div class="field">
           <label style="margin-bottom:10px;">Ingredients in recipe</label>
@@ -292,11 +352,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="modal-title">Edit product <button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="field"><label>Product name</label><input type="text" id="e-prod-name"/></div>
     <div class="field">
+      <label>Product category</label>
+      <select id="e-prod-category">
+        <option value="standard">Standard (no cooking required)</option>
+        <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
+      </select>
+    </div>
+    <div class="field">
       <label>Packaging type</label>
       <select id="e-pkg-type">
         <option value="standard">Standard — Pouch + Box</option>
         <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
       </select>
+    </div>
+    <div class="field">
+      <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional</span></label>
+      <input type="url" id="e-label-url" placeholder="https://…"/>
     </div>
     <div class="field">
       <label style="margin-bottom:10px;">Ingredients in recipe</label>
@@ -331,11 +402,12 @@ const SK_SETTINGS = 'batch_settings_v1';
 const PKG_STANDARD = ['Pouch batch no.','Box batch no.'];
 const PKG_BOWL     = ['Bowl batch no.','Compartment batch no.','Vacuum pouch batch no.','Outer box batch no.'];
 
-let products = [], batchRecords = [], settings = {scriptUrl:'',stockCheckUrl:'https://script.google.com/macros/s/AKfycbwZSz-zQU5Y5SIn2VWemuLdMh6phBD5ASnO-raNfxnmQVsXkUlZ2WnfD3ueSQuRUjxLkA/exec',sites:[]};
+let products = [], batchRecords = [], settings = {scriptUrl:'',stockCheckUrl:'',sites:[]};
 let selectedProductId = null;
 let editingId = null;
 let confirmCb = null;
 let ingredientPhotos = {}; // name → photo URL cache
+let productPhotos = {};   // finProduct name → photo URL cache
 
 // ── Boot ──
 async function load(){
@@ -396,6 +468,15 @@ async function fetchIngredientPhotos(){
       j.ingredients.forEach(i=>{if(i.photo)ingredientPhotos[i.name]=i.photo;});
     }
   }catch(e){}
+  try{
+    const res2=await fetch(settings.stockCheckUrl+'?action=getFinProducts');
+    const j2=await res2.json();
+    if(j2.products){
+      productPhotos={};
+      j2.products.forEach(p=>{if(p.photo)productPhotos[p.name]=p.photo;});
+      renderProductGrid();
+    }
+  }catch(e){}
 }
 
 // ── Tabs ──
@@ -422,8 +503,13 @@ function renderProductGrid(){
   const noMsg=document.getElementById('no-products-msg');
   if(!products.length){grid.style.display='none';noMsg.style.display='';return;}
   grid.style.display='';noMsg.style.display='none';
-  grid.innerHTML=products.map(p=>`
-    <button class="product-btn" onclick="selectProduct('${p.id}')">${p.name}</button>`).join('');
+  grid.innerHTML=products.map(p=>{
+    const photo=productPhotos[p.name];
+    const imgHtml=photo
+      ?`<img class="product-btn-photo" src="${photo}" onerror="this.outerHTML='<div class=\\'product-btn-photo-placeholder\\'>🍲</div>'"/>`
+      :`<div class="product-btn-photo-placeholder">🍲</div>`;
+    return`<button class="product-btn" onclick="selectProduct('${p.id}')">${imgHtml}<span>${p.name}</span></button>`;
+  }).join('');
 }
 
 // ── Select product → show form ──
@@ -431,6 +517,15 @@ function selectProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   selectedProductId=id;
   document.getElementById('form-product-name').textContent=p.name;
+  // Category label in banner
+  document.getElementById('form-product-category').textContent=p.category==='cooked'?'🔥 Cooked product':'';
+  // Product photo in banner
+  const photoWrap=document.getElementById('form-product-photo-wrap');
+  const prodPhoto=productPhotos[p.name];
+  if(prodPhoto){
+    photoWrap.style.display='';
+    photoWrap.innerHTML=`<img src="${prodPhoto}" onerror="this.parentElement.style.display='none'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,.25);flex-shrink:0;"/>`;
+  }else{photoWrap.style.display='none';}
   // Ingredient batch rows
   const ingList=document.getElementById('ing-batches-list');
   ingList.innerHTML=(p.ingredients||[]).map(ing=>{
@@ -456,6 +551,23 @@ function selectProduct(id){
   // Reset other fields
   document.getElementById('r-product-batch').value='';
   document.getElementById('r-temp').value='';
+  // Cooking/cooling card
+  const isCooked=p.category==='cooked';
+  document.getElementById('cooking-card').style.display=isCooked?'':'none';
+  document.getElementById('r-cook-temp').value='';
+  document.getElementById('r-cool-temp').value='';
+  document.getElementById('cook-badge').style.display='none';
+  document.getElementById('cool-badge').style.display='none';
+  // Label reference
+  const labelRefBox=document.getElementById('label-ref-box');
+  if(p.labelUrl){
+    document.getElementById('label-ref-link').href=p.labelUrl;
+    labelRefBox.style.display='';
+    document.getElementById('label-check-text').textContent='Labels checked and match master label';
+  }else{
+    labelRefBox.style.display='none';
+    document.getElementById('label-check-text').textContent='Labels checked and correct';
+  }
   document.getElementById('r-label-check').checked=false;
   document.getElementById('label-check-wrap').classList.remove('checked');
   document.getElementById('r-notes').value='';
@@ -469,6 +581,24 @@ function deselectProduct(){
   document.getElementById('record-form').style.display='none';
 }
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
+function updateCookBadge(){
+  const v=parseFloat(document.getElementById('r-cook-temp').value);
+  const el=document.getElementById('cook-badge');
+  if(isNaN(v)){el.style.display='none';return;}
+  el.style.display='';
+  if(v>=100){el.className='temp-badge temp-ok';el.textContent='✓ '+v+'°C — target reached';}
+  else if(v>=75){el.className='temp-badge temp-warn';el.textContent='⚠ '+v+'°C — below 100°C target';}
+  else{el.className='temp-badge temp-bad';el.textContent='✗ '+v+'°C — too low';}
+}
+function updateCoolBadge(){
+  const v=parseFloat(document.getElementById('r-cool-temp').value);
+  const el=document.getElementById('cool-badge');
+  if(isNaN(v)){el.style.display='none';return;}
+  el.style.display='';
+  if(v<=8){el.className='temp-badge temp-ok';el.textContent='✓ '+v+'°C — safely cooled';}
+  else if(v<=12){el.className='temp-badge temp-warn';el.textContent='⚠ '+v+'°C — slightly warm';}
+  else{el.className='temp-badge temp-bad';el.textContent='✗ '+v+'°C — too warm';}
+}
 
 // ── Submit record ──
 async function submitRecord(){
@@ -479,17 +609,22 @@ async function submitRecord(){
   const temp=document.getElementById('r-temp').value;
   const labelCheck=document.getElementById('r-label-check').checked;
   const notes=document.getElementById('r-notes').value.trim();
+  const p=products.find(x=>x.id===selectedProductId);
+  const isCooked=p&&p.category==='cooked';
+  const cookTemp=isCooked?document.getElementById('r-cook-temp').value:'';
+  const coolTemp=isCooked?document.getElementById('r-cool-temp').value:'';
   const err=document.getElementById('err-record');
   const missing=[];
   if(!date)missing.push('date');
   if(!site)missing.push('site');
   if(!staff)missing.push('staff name');
   if(!productBatch)missing.push('product batch number');
-  if(!temp)missing.push('temperature');
+  if(!temp)missing.push('finished product temperature');
+  if(isCooked&&!cookTemp)missing.push('cooking temperature');
+  if(isCooked&&!coolTemp)missing.push('cooling temperature');
   if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
   err.style.display='none';
 
-  const p=products.find(x=>x.id===selectedProductId);
   const pkgFields=p.pkgType==='bowl'?PKG_BOWL:PKG_STANDARD;
 
   // Collect ingredient batches
@@ -504,9 +639,12 @@ async function submitRecord(){
 
   const now=new Date().toISOString();
   const record={
-    id:uid(),date,site,staff,product:p.name,productBatch,
+    id:uid(),date,site,staff,product:p.name,productCategory:p.category||'standard',productBatch,
     ingredientBatches,packagingBatches,
-    temp:parseFloat(temp),labelCheck,notes,savedAt:now,
+    temp:parseFloat(temp),
+    cookTemp:isCooked&&cookTemp?parseFloat(cookTemp):null,
+    coolTemp:isCooked&&coolTemp?parseFloat(coolTemp):null,
+    labelCheck,notes,savedAt:now,
     // pass structure so Apps Script can build correct columns
     ingredientNames:(p.ingredients||[]),
     pkgLabels:pkgFields
@@ -550,6 +688,8 @@ function renderHistory(){
         `:''}
         <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;align-items:center;">
           <div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">TEMP </span><strong>${r.temp}°C</strong></div>
+          ${r.cookTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOK </span><strong>${r.cookTemp}°C</strong></div>`:''}
+          ${r.coolTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOL </span><strong>${r.coolTemp}°C</strong></div>`:''}
           <div>${r.labelCheck?'<span class="badge-ok">✓ Labels checked</span>':'<span class="badge-fail">✗ Labels not checked</span>'}</div>
         </div>
         ${r.notes?`<div style="font-size:13px;color:var(--text-muted);margin-top:8px;font-style:italic;">${r.notes}</div>`:''}
@@ -564,8 +704,8 @@ function renderProductList(){
   c.innerHTML=products.map(p=>`
     <div class="product-setup-item">
       <div class="product-setup-body">
-        <div class="product-setup-name">${p.name}</div>
-        <div class="product-setup-meta">${(p.ingredients||[]).length} ingredients · ${p.pkgType==='bowl'?'Bowl packaging':'Standard packaging'}</div>
+        <div class="product-setup-name">${p.name} <span class="${p.category==='cooked'?'cat-cooked':'cat-standard'}">${p.category==='cooked'?'🔥 Cooked':'Standard'}</span></div>
+        <div class="product-setup-meta">${(p.ingredients||[]).length} ingredients · ${p.pkgType==='bowl'?'Bowl packaging':'Standard packaging'}${p.labelUrl?' · Label ✓':''}</div>
       </div>
       <div class="product-setup-actions">
         <button class="btn-sm" onclick="openEdit('${p.id}')">Edit</button>
@@ -587,7 +727,9 @@ function getIngredients(prefix){
 }
 function resetAddForm(){
   document.getElementById('s-prod-name').value='';
+  document.getElementById('s-prod-category').value='standard';
   document.getElementById('s-pkg-type').value='standard';
+  document.getElementById('s-label-url').value='';
   document.getElementById('s-ing-list').innerHTML='';
   document.getElementById('err-add-prod').style.display='none';
   document.getElementById('add-form-title').textContent='New product';
@@ -602,7 +744,7 @@ async function saveProduct(){
   err.style.display='none';
   const btn=document.getElementById('save-prod-btn');
   btn.textContent='Saving…';btn.disabled=true;
-  const prod={id:uid(),name,pkgType:document.getElementById('s-pkg-type').value,ingredients:getIngredients('s')};
+  const prod={id:uid(),name,category:document.getElementById('s-prod-category').value||'standard',pkgType:document.getElementById('s-pkg-type').value,labelUrl:document.getElementById('s-label-url').value.trim(),ingredients:getIngredients('s')};
   try{
     if(settings.scriptUrl){
       const r=await api({action:'saveProduct',product:prod});
@@ -622,7 +764,9 @@ function openEdit(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   editingId=id;
   document.getElementById('e-prod-name').value=p.name;
+  document.getElementById('e-prod-category').value=p.category||'standard';
   document.getElementById('e-pkg-type').value=p.pkgType||'standard';
+  document.getElementById('e-label-url').value=p.labelUrl||'';
   const list=document.getElementById('e-ing-list');list.innerHTML='';
   (p.ingredients||[]).forEach(ing=>addIngRow('e',ing));
   document.getElementById('err-edit-prod').style.display='none';
@@ -638,7 +782,7 @@ async function saveEdit(){
   const idx=products.findIndex(x=>x.id===editingId);if(idx<0)return;
   const saveBtn=document.querySelector('#edit-modal .btn-primary');
   saveBtn.textContent='Saving…';saveBtn.disabled=true;
-  const updated={...products[idx],name,pkgType:document.getElementById('e-pkg-type').value,ingredients:getIngredients('e')};
+  const updated={...products[idx],name,category:document.getElementById('e-prod-category').value||'standard',pkgType:document.getElementById('e-pkg-type').value,labelUrl:document.getElementById('e-label-url').value.trim(),ingredients:getIngredients('e')};
   try{
     if(settings.scriptUrl)await api({action:'saveProduct',product:updated});
     products[idx]=updated;persistProducts();
