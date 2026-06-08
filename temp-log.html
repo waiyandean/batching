@@ -69,6 +69,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* Back link */
 .back-link{font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;}
 
+/* Pending-from-batch card */
+.pending-new-card{background:var(--surface);border:2px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:8px;cursor:pointer;transition:background .15s;}
+.pending-new-card:active{background:var(--bg);}
+.pending-new-banner{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.pending-new-tag{font-size:10px;font-family:monospace;letter-spacing:.06em;background:var(--accent);color:var(--accent-fg);border-radius:20px;padding:3px 9px;}
+.pending-new-product{font-size:15px;font-weight:500;margin-bottom:2px;}
+.pending-new-meta{font-size:12px;font-family:monospace;color:var(--text-muted);}
+.pending-new-action{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.pending-new-cta{font-size:13px;font-weight:500;color:var(--text);}
+.pending-new-discard{font-size:12px;color:var(--text-hint);background:none;border:none;font-family:var(--font);cursor:pointer;padding:4px;}
+
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;}
 .modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
@@ -155,19 +166,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <script>
 const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
+const SK_PENDING  = 'pending_cooked_batch';
 
 let records  = [];
 let settings = {scriptUrl:''};
 let modalRecordId  = null;
 let modalTempType  = null; // 'cook' | 'cool'
+let pendingRecord  = null; // cooked batch awaiting first cook temp
 
 // ── Boot ──
 async function load(){
   try{const d=localStorage.getItem(SK_RECORDS);if(d)records=JSON.parse(d);}catch(e){}
   try{const d=localStorage.getItem(SK_SETTINGS);if(d)settings={scriptUrl:'',...JSON.parse(d)};}catch(e){}
+  // Pick up any cooked batch pending from the batch form
+  try{const d=localStorage.getItem(SK_PENDING);if(d)pendingRecord=JSON.parse(d);}catch(e){}
   updateSyncBadge(settings.scriptUrl?'ready':'no-url');
   render();
-  // Try to pull latest record states from Apps Script (in case another device logged temps)
   if(settings.scriptUrl) await syncFromScript();
 }
 
@@ -264,7 +278,7 @@ function render(){
   const coolPending=pending.filter(needsCool).sort((a,b)=>new Date(a.cookLoggedAt||a.savedAt)-new Date(b.cookLoggedAt||b.savedAt));
   const done=pending.filter(isComplete).sort((a,b)=>new Date(b.coolLoggedAt)-new Date(a.coolLoggedAt)).slice(0,5);
 
-  if(!cookPending.length&&!coolPending.length&&!done.length){
+  if(!pendingRecord&&!cookPending.length&&!coolPending.length&&!done.length){
     document.getElementById('main-content').innerHTML=`
       <div class="empty">
         <div class="empty-icon">✓</div>
@@ -275,6 +289,23 @@ function render(){
   }
 
   let html='';
+
+  // Pending-from-batch: batch just completed, cook temp not yet entered
+  if(pendingRecord){
+    html+=`<div class="section-header"><span class="section-title">Just batched</span><div class="section-line"></div></div>`;
+    html+=`<div class="pending-new-card" onclick="openPendingModal()">
+      <div class="pending-new-banner">
+        <span class="pending-new-tag">AWAITING SAVE</span>
+        <span style="font-size:11px;font-family:monospace;color:var(--text-muted);">Batch record not yet saved</span>
+      </div>
+      <div class="pending-new-product">${pendingRecord.product}</div>
+      <div class="pending-new-meta">${pendingRecord.productBatch} · ${pendingRecord.staff}${pendingRecord.site?' · '+pendingRecord.site:''}</div>
+      <div class="pending-new-action">
+        <span class="pending-new-cta">🔥 Enter cooking temperature to save →</span>
+        <button class="pending-new-discard" onclick="event.stopPropagation();discardPending()">Discard</button>
+      </div>
+    </div>`;
+  }
 
   if(cookPending.length){
     html+=`<div class="section-header"><span class="section-title">Cook temp due</span><span class="section-count">${cookPending.length}</span><div class="section-line"></div></div>`;
@@ -355,6 +386,31 @@ function openModal(recordId,tempType){
 function maybeCloseModal(e){if(e.target===document.getElementById('log-modal'))closeModal();}
 function closeModal(){document.getElementById('log-modal').style.display='none';modalRecordId=null;modalTempType=null;}
 
+// ── Pending batch (from batch form) ──
+function openPendingModal(){
+  // Open the cook temp modal for the pending record
+  // We use a special sentinel ID so submitTemp knows to finalise the whole record
+  modalRecordId='__pending__';
+  modalTempType='cook';
+  document.getElementById('modal-type-label').textContent='Log cooking temperature';
+  document.getElementById('modal-batch-sub').textContent=pendingRecord.product+' · '+pendingRecord.productBatch;
+  document.getElementById('modal-temp-input').value='';
+  document.getElementById('modal-badge').style.display='none';
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('modal-prev-info').style.display='none';
+  document.getElementById('modal-temp-label').textContent='COOKING TEMPERATURE';
+  document.getElementById('modal-guide').textContent='Target: core temperature ≥ 100°C — entering this will save the batch record';
+  document.getElementById('modal-submit-btn').textContent='Save cooking temp & submit batch';
+  document.getElementById('log-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('modal-temp-input').focus(),200);
+}
+function discardPending(){
+  localStorage.removeItem(SK_PENDING);
+  pendingRecord=null;
+  render();
+  showToast('Batch discarded');
+}
+
 function updateModalBadge(){
   const v=parseFloat(document.getElementById('modal-temp-input').value);
   const el=document.getElementById('modal-badge');
@@ -380,14 +436,40 @@ async function submitTemp(){
   if(isNaN(temp)){err.style.display='';err.textContent='Please enter a valid number.';return;}
   err.style.display='none';
 
-  const idx=records.findIndex(r=>r.id===modalRecordId);
-  if(idx<0){err.style.display='';err.textContent='Record not found.';return;}
-
   const now=new Date().toISOString();
   const btn=document.getElementById('modal-submit-btn');
   btn.textContent='Saving…';btn.disabled=true;
 
-  // Update local record
+  // ── Pending record: finalise the batch record then log cook temp ──
+  if(modalRecordId==='__pending__'){
+    const record={...pendingRecord,cookTemp:temp,cookLoggedAt:now};
+    records.unshift(record);
+    persistRecords();
+    localStorage.removeItem(SK_PENDING);
+    pendingRecord=null;
+    if(settings.scriptUrl){
+      updateSyncBadge('syncing');
+      try{
+        // Save the full batch record first
+        await fetch(settings.scriptUrl,{method:'POST',body:JSON.stringify({action:'saveBatchRecord',record}),headers:{'Content-Type':'text/plain'}});
+        // Then log the cook temp
+        const j=await fetch(settings.scriptUrl,{method:'POST',body:JSON.stringify({action:'updateBatchTemp',recordId:record.id,tempType:'cook',temp,loggedAt:now}),headers:{'Content-Type':'text/plain'}}).then(r=>r.json());
+        updateSyncBadge(j.result==='success'?'synced':'error');
+        setTimeout(()=>updateSyncBadge('ready'),4000);
+      }catch(e){updateSyncBadge('error');setTimeout(()=>updateSyncBadge(settings.scriptUrl?'ready':'no-url'),4000);}
+    }
+    showToast('Batch record saved ✓ · Cooking temp logged');
+    closeModal();
+    render();
+    btn.textContent='Save cooking temp & submit batch';
+    btn.disabled=false;
+    return;
+  }
+
+  // ── Existing record: just update temp ──
+  const idx=records.findIndex(r=>r.id===modalRecordId);
+  if(idx<0){err.style.display='';err.textContent='Record not found.';return;}
+
   if(modalTempType==='cook'){
     records[idx].cookTemp=temp;
     records[idx].cookLoggedAt=now;
@@ -397,22 +479,11 @@ async function submitTemp(){
   }
   persistRecords();
 
-  // Sync to Apps Script
   if(settings.scriptUrl){
     updateSyncBadge('syncing');
     try{
-      const body={
-        action:'updateBatchTemp',
-        recordId:modalRecordId,
-        tempType:modalTempType,
-        temp,
-        loggedAt:now
-      };
-      const res=await fetch(settings.scriptUrl,{
-        method:'POST',
-        body:JSON.stringify(body),
-        headers:{'Content-Type':'text/plain'}
-      });
+      const body={action:'updateBatchTemp',recordId:modalRecordId,tempType:modalTempType,temp,loggedAt:now};
+      const res=await fetch(settings.scriptUrl,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'text/plain'}});
       const j=await res.json();
       updateSyncBadge(j.result==='success'?'synced':'error');
       setTimeout(()=>updateSyncBadge('ready'),4000);
