@@ -270,7 +270,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzlbbx063VjdeWhzFex-D_oBGRdRErozzmV8WOoo-72PjLg2bnI5M7eWrTg4BDGpeF/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5zJQDK6X038VNeKDXtD6giuOTI639mNZe7LDjkWbtDjAZIHXe5RU44ZIvb_kjzvqy/exec';
 const SK_PRODUCTS = 'batch_products_v1';
 const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
@@ -320,7 +320,21 @@ async function apiGet(params){
   return res.json();
 }
 async function fetchProducts(){
-  try{const j=await apiGet({action:'getProducts'});if(j.products){products=j.products;persistProducts();}}catch(e){}
+  try{
+    const j=await apiGet({action:'getProducts'});
+    if(j.products){
+      // Merge: preserve local category if server returns blank/standard
+      // (Products sheet rows created before the Category column existed
+      //  will have an empty cell that incorrectly defaults to 'standard')
+      const localMap=Object.fromEntries(products.map(p=>[p.id,p]));
+      products=j.products.map(sp=>{
+        const local=localMap[sp.id];
+        const cat=sp.category&&sp.category!=='standard'?sp.category:local?.category||sp.category||'standard';
+        return{...sp,category:cat,pkgType:sp.pkgType||(local?.pkgType||'standard'),labelUrl:sp.labelUrl||(local?.labelUrl||'')};
+      });
+      persistProducts();
+    }
+  }catch(e){}
 }
 // ── Tabs ──
 function showTab(t){
