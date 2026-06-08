@@ -281,7 +281,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
 
       <div class="err" id="err-record"></div>
-      <button class="btn btn-primary" onclick="submitRecord()">Submit batch record</button>
+      <button class="btn btn-primary" id="submit-batch-btn" onclick="submitRecord()">Submit batch record</button>
     </div>
   </div>
 
@@ -298,7 +298,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNlADNkIgxHaa789IGfWDRjcke1yftuIqePVVPsaVz9XpgxR-U0w0NsUJ7JrfiKO-J/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5zJQDK6X038VNeKDXtD6giuOTI639mNZe7LDjkWbtDjAZIHXe5RU44ZIvb_kjzvqy/exec';
 const SK_PRODUCTS = 'batch_products_v1';
 const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
@@ -475,6 +475,8 @@ function selectProduct(id){
   document.getElementById('err-record').style.display='none';
   document.getElementById('record-pick-product').style.display='none';
   document.getElementById('record-form').style.display='';
+  // Update submit button label based on category
+  document.getElementById('submit-batch-btn').textContent=isCooked?'Continue to Temp Log →':'Submit batch record';
 }
 function deselectProduct(){
   selectedProductId=null;
@@ -528,12 +530,10 @@ async function submitRecord(){
 
   const pkgFields=p.pkgType==='bowl'?PKG_BOWL:PKG_STANDARD;
 
-  // Collect ingredient batches
   const ingredientBatches=(p.ingredients||[]).map(ing=>({
     ingredient:ing,
     batch:document.getElementById('ib_'+slugify(ing))?.value.trim()||''
   }));
-  // Collect packaging batches
   const packagingBatches=pkgFields.map((label,i)=>({
     label,batch:document.getElementById('pb_'+i)?.value.trim()||''
   }));
@@ -548,6 +548,15 @@ async function submitRecord(){
     ingredientNames:(p.ingredients||[]),
     pkgLabels:pkgFields
   };
+
+  if(isCooked){
+    // Cooked products: stash as pending — only finalised when cook temp is entered in Temp Log
+    localStorage.setItem('pending_cooked_batch',JSON.stringify(record));
+    window.location.href='temp-log.html';
+    return;
+  }
+
+  // Standard products: save immediately as before
   batchRecords.unshift(record);
   persistRecords();
   updatePendingBadge();
