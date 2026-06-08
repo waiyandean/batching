@@ -20,6 +20,7 @@
   --warn-bg:#fdf6e3;--warn-text:#8a6500;
   --danger-bg:#fdecea;--danger-text:#c0392b;
   --radius:10px;--radius-sm:6px;--font:'Lexend',sans-serif;
+  --warn-border:#e8c84a;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
@@ -225,15 +226,35 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
 
       <!-- Temperature — cooked products (logged separately via Temp Log) -->
-      <div id="temp-cooked-card" class="card" style="display:none;background:var(--warn-bg);border-color:var(--warn-border);">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="font-size:20px;">🌡</span>
-          <div>
-            <div style="font-size:13px;font-weight:500;color:var(--warn-text);">Temperature checks required</div>
-            <div style="font-size:12px;color:var(--warn-text);opacity:.8;margin-top:2px;">Cooking &amp; cooling temps are recorded separately after production.</div>
+      <div id="temp-cooked-card" style="display:none;margin-bottom:12px;">
+        <div style="background:var(--warn-bg);border:1.5px solid var(--warn-border);border-radius:var(--radius);padding:16px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.6);border:1px solid var(--warn-border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🌡</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:500;color:var(--warn-text);margin-bottom:3px;">Temperature checks done separately</div>
+              <div style="font-size:12px;color:var(--warn-text);opacity:.75;line-height:1.5;">Cooking and cooling temps for this product are logged in the Temp Log — complete them after production is finished.</div>
+            </div>
           </div>
+          <div style="display:flex;gap:8px;flex-direction:column;">
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.5);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:10px 12px;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-family:monospace;letter-spacing:.06em;color:var(--warn-text);margin-bottom:1px;">AFTER COOKING</div>
+                <div style="font-size:12px;color:var(--warn-text);opacity:.75;">Log the core cooking temperature</div>
+              </div>
+              <span style="font-size:18px;">🔥</span>
+            </div>
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.5);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:10px 12px;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-family:monospace;letter-spacing:.06em;color:var(--warn-text);margin-bottom:1px;">AFTER COOLING</div>
+                <div style="font-size:12px;color:var(--warn-text);opacity:.75;">Log once cooled to storage temp</div>
+              </div>
+              <span style="font-size:18px;">❄️</span>
+            </div>
+          </div>
+          <a href="temp-log.html" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;font-family:var(--font);color:var(--warn-text);background:rgba(255,255,255,.7);border:1.5px solid var(--warn-border);border-radius:var(--radius-sm);padding:11px 16px;text-decoration:none;margin-top:12px;">
+            <span>Open Temp Log</span><span style="font-size:16px;">→</span>
+          </a>
         </div>
-        <a href="temp-log.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-family:var(--font);color:var(--warn-text);background:rgba(255,255,255,.6);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:8px 14px;text-decoration:none;">Go to Temp Log →</a>
       </div>
 
       <!-- Label check -->
@@ -552,9 +573,10 @@ function renderHistory(){
         ${r.packagingBatches.map(pb=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">${pb.label}</span><span>${pb.batch||'—'}</span></div>`).join('')}
         `:''}
         <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-          <div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">TEMP </span><strong>${r.temp}°C</strong></div>
+          ${r.temp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">TEMP </span><strong>${r.temp}°C</strong></div>`:''}
           ${r.cookTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOK </span><strong>${r.cookTemp}°C</strong></div>`:''}
           ${r.coolTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOL </span><strong>${r.coolTemp}°C</strong></div>`:''}
+          ${(r.productCategory==='cooked'&&r.cookTemp==null)?`<span style="font-size:11px;font-family:monospace;background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);border-radius:20px;padding:2px 8px;">⏳ Temps pending</span>`:''}
           <div>${r.labelCheck?'<span class="badge-ok">✓ Labels checked</span>':'<span class="badge-fail">✗ Labels not checked</span>'}</div>
         </div>
         ${r.notes?`<div style="font-size:13px;color:var(--text-muted);margin-top:8px;font-style:italic;">${r.notes}</div>`:''}
