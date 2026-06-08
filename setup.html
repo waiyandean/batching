@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Batch Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Batch Setup"/>
+<meta name="theme-color" content="#1a1916"/>
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e0ddd6;--border-strong:#c8c4bb;
+  --text:#1a1916;--text-muted:#7a776e;--text-hint:#b0ada5;
+  --accent:#1a1916;--accent-fg:#fff;
+  --success-bg:#edf7ed;--success-text:#2d6e2d;
+  --warn-bg:#fdf6e3;--warn-text:#8a6500;
+  --danger-bg:#fdecea;--danger-text:#c0392b;
+  --radius:10px;--radius-sm:6px;--font:'Lexend',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+.app-title{font-size:17px;font-weight:400;}
+.app-title span{color:var(--text-muted);}
+.sync-badge{font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:53px;z-index:19;}
+.tab{flex:1;padding:11px 6px;font-size:13px;font-family:var(--font);border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500;}
+.content{padding:16px;max-width:640px;margin:0 auto;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-label{font-size:11px;font-family:monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.card-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.btn{width:100%;padding:13px;border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--accent);color:var(--accent-fg);}
+.btn-primary:active{opacity:.85;}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border-strong);margin-top:10px;}
+.btn-sm{padding:6px 12px;font-size:13px;width:auto;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font);}
+.btn-sm:active{background:var(--bg);}
+.btn-danger-sm{color:var(--danger-text);border-color:transparent;}
+.btn-danger-sm:active{background:var(--danger-bg);}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:12px;font-family:monospace;color:var(--text-muted);margin-bottom:5px;letter-spacing:.03em;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-hint);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field select{background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" stroke="%237a776e" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.err{display:none;color:var(--danger-text);background:var(--danger-bg);border:1px solid #f5b8b3;border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;margin-bottom:12px;}
+
+/* Product selector */
+.product-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.product-btn{padding:14px 10px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);font-family:var(--font);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;text-align:center;transition:all .15s;line-height:1.3;}
+.product-btn:active,.product-btn.selected{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);}
+
+/* Section headers */
+.section-header{display:flex;align-items:center;gap:10px;padding:8px 0 6px;margin-bottom:8px;}
+.section-title{font-size:11px;font-family:monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);}
+.section-line{flex:1;height:1px;background:var(--border);}
+
+/* Ingredient batch rows */
+.ing-batch-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:6px;}
+.ing-batch-name{flex:1;font-size:14px;font-weight:500;min-width:0;}
+.ing-batch-input{width:140px;flex-shrink:0;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);background:var(--bg);color:var(--text);outline:none;}
+.ing-batch-input:focus{border-color:var(--accent);background:var(--surface);}
+.ing-batch-input::placeholder{color:var(--text-hint);}
+.ing-batch-input.filled{border-color:#b2d9b2;background:var(--success-bg);}
+
+/* Temperature field */
+.temp-wrap{display:flex;align-items:center;gap:8px;}
+.temp-wrap input{flex:1;}
+.temp-unit{font-size:14px;color:var(--text-muted);font-family:monospace;flex-shrink:0;}
+
+/* Label check */
+.check-box{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;cursor:pointer;transition:all .15s;}
+.check-box.checked{background:var(--success-bg);border-color:#b2d9b2;}
+.check-box input[type=checkbox]{width:20px;height:20px;accent-color:#2d6e2d;cursor:pointer;flex-shrink:0;}
+.check-box span{font-size:14px;color:var(--text-muted);}
+.check-box.checked span{color:var(--success-text);font-weight:500;}
+
+/* Progress */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:14px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+
+/* Setup */
+.setup-tabs{display:flex;gap:6px;margin-bottom:16px;}
+.setup-tab{padding:7px 14px;font-size:13px;font-family:var(--font);border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text-muted);cursor:pointer;}
+.setup-tab.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);}
+.product-setup-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.product-setup-body{flex:1;min-width:0;}
+.product-setup-name{font-size:14px;font-weight:500;}
+.product-setup-meta{font-size:11px;font-family:monospace;color:var(--text-muted);margin-top:2px;}
+.product-setup-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* Recipe editor */
+.recipe-ing-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.recipe-ing-row input{flex:1;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;}
+.recipe-ing-row input:focus{border-color:var(--accent);}
+
+/* Records */
+.record-group{margin-bottom:20px;}
+.record-header{font-size:13px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.record-date{color:var(--text-muted);font-size:12px;font-family:monospace;}
+.record-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:4px;font-size:13px;}
+.record-detail-label{font-family:monospace;font-size:11px;color:var(--text-muted);margin-bottom:3px;}
+.badge-ok{display:inline-block;font-size:11px;font-family:monospace;background:var(--success-bg);color:var(--success-text);border:1px solid #b2d9b2;border-radius:20px;padding:2px 8px;}
+.badge-fail{display:inline-block;font-size:11px;font-family:monospace;background:var(--danger-bg);color:var(--danger-text);border:1px solid #f5b8b3;border-radius:20px;padding:2px 8px;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{font-size:22px;color:var(--text-muted);background:none;border:none;cursor:pointer;line-height:1;}
+
+/* Confirm */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:60;display:none;align-items:center;justify-content:center;padding:20px;}
+.confirm-box{background:var(--surface);border-radius:var(--radius);padding:20px;max-width:320px;width:100%;}
+.confirm-title{font-size:15px;font-weight:500;margin-bottom:8px;}
+.confirm-msg{font-size:13px;color:var(--text-muted);margin-bottom:16px;}
+.confirm-btns{display:flex;gap:8px;}
+.confirm-btns button{flex:1;padding:10px;border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);cursor:pointer;border:1px solid var(--border);background:transparent;}
+.confirm-btns .confirm-ok{background:var(--danger-text);color:white;border-color:var(--danger-text);}
+
+.empty{text-align:center;padding:48px 16px;color:var(--text-muted);font-size:14px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--accent-fg);padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* Product button with photo */
+.product-btn{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.product-btn-photo{width:52px;height:52px;border-radius:6px;object-fit:cover;display:block;}
+.product-btn-photo-placeholder{width:52px;height:52px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;}
+/* Temperature feedback badges */
+.temp-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;border-radius:20px;padding:3px 10px;margin-top:6px;}
+.temp-ok{background:var(--success-bg);color:var(--success-text);border:1px solid #b2d9b2;}
+.temp-warn{background:var(--warn-bg);color:var(--warn-text);border:1px solid #f0d88a;}
+.temp-bad{background:var(--danger-bg);color:var(--danger-text);border:1px solid #f5b8b3;}
+/* Master label reference */
+.label-ref-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;text-align:center;}
+.label-ref-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);text-decoration:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;background:var(--surface);}
+.label-ref-btn:active{background:var(--bg);}
+/* Category badges */
+.cat-standard{font-size:10px;font-family:monospace;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);border-radius:20px;padding:2px 8px;vertical-align:middle;}
+.cat-cooked{font-size:10px;font-family:monospace;background:var(--warn-bg);color:var(--warn-text);border:1px solid #f0d88a;border-radius:20px;padding:2px 8px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="app-title">Batch <span>Setup</span></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="index.html" style="font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;">← Batch Record</a>
+    <div class="sync-badge" id="sync-status">● sheets</div>
+  </div>
+</header>
+<div class="content">
+
+  <!-- ── SETUP ── -->
+  <div id="panel-setup">
+    <div class="setup-tabs">
+      <button class="setup-tab active" onclick="showSetupTab('products')" id="stab-products">Products</button>
+      <button class="setup-tab" onclick="showSetupTab('add')" id="stab-add">+ Add new</button>
+      <button class="setup-tab" onclick="showSetupTab('settings')" id="stab-settings">Settings</button>
+    </div>
+
+    <!-- Products list -->
+    <div id="setup-products"><div id="product-list"></div></div>
+
+    <!-- Add product -->
+    <div id="setup-add" style="display:none;">
+      <div class="card">
+        <div class="card-label" id="add-form-title">New product</div>
+        <div class="field"><label>Product name</label><input type="text" id="s-prod-name" placeholder="e.g. Chicken Ramen"/></div>
+        <div class="field">
+          <label>Product category</label>
+          <select id="s-prod-category">
+            <option value="standard">Standard (no cooking required)</option>
+            <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Packaging type</label>
+          <select id="s-pkg-type">
+            <option value="standard">Standard — Pouch + Box</option>
+            <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional — paste a link to the reference label</span></label>
+          <input type="url" id="s-label-url" placeholder="https://…"/>
+        </div>
+        <div class="field">
+          <label style="margin-bottom:10px;">Ingredients in recipe</label>
+          <div id="s-ing-list"></div>
+          <button class="btn-sm" style="margin-top:8px;" onclick="addIngRow('s')">+ Add ingredient</button>
+        </div>
+        <div class="err" id="err-add-prod"></div>
+        <button class="btn btn-primary" id="save-prod-btn" onclick="saveProduct()">Save product</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="setup-settings" style="display:none;">
+      <div class="card">
+        <div class="card-label">Sites</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Sites are shared with other forms on this device.</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input type="text" id="new-site" placeholder="e.g. Soho Kitchen" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);outline:none;" onkeydown="if(event.key==='Enter')addSite()"/>
+          <button class="btn-sm" style="background:var(--accent);color:var(--accent-fg);border-color:var(--accent);padding:10px 16px;" onclick="addSite()">Add</button>
+        </div>
+        <div id="sites-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Google Sheets sync</div>
+        <div class="field"><label>Batch Record Apps Script URL</label><input type="text" id="s-script-url" placeholder="https://script.google.com/macros/s/…"/></div>
+        <div class="field"><label>Stock Check Apps Script URL <span style="font-family:monospace;font-size:10px;color:var(--text-hint);">for ingredient photos</span></label><input type="text" id="s-stock-url" placeholder="https://script.google.com/macros/s/…"/></div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit product modal -->
+<div class="modal-overlay" id="edit-modal" style="display:none;" onclick="maybeCloseModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Edit product <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="field"><label>Product name</label><input type="text" id="e-prod-name"/></div>
+    <div class="field">
+      <label>Product category</label>
+      <select id="e-prod-category">
+        <option value="standard">Standard (no cooking required)</option>
+        <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Packaging type</label>
+      <select id="e-pkg-type">
+        <option value="standard">Standard — Pouch + Box</option>
+        <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional</span></label>
+      <input type="url" id="e-label-url" placeholder="https://…"/>
+    </div>
+    <div class="field">
+      <label style="margin-bottom:10px;">Ingredients in recipe</label>
+      <div id="e-ing-list"></div>
+      <button class="btn-sm" style="margin-top:8px;" onclick="addIngRow('e')">+ Add ingredient</button>
+    </div>
+    <div class="err" id="err-edit-prod"></div>
+    <button class="btn btn-primary" style="margin-top:4px;" onclick="saveEdit()">Save changes</button>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Are you sure?</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button onclick="confirmCancel()">Cancel</button>
+      <button class="confirm-ok" id="confirm-ok-btn" onclick="confirmOk()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2P-qW06GItHL9gYE4PSX7dnVBviSEf4GvRJzD9gTpMsPexfzuelRx68nRSAVPT1-i/exec';
+const SK_PRODUCTS = 'batch_products_v1';
+const SK_RECORDS  = 'batch_records_v1';
+const SK_SETTINGS = 'batch_settings_v1';
+
+const PKG_STANDARD = ['Pouch batch no.','Box batch no.'];
+const PKG_BOWL     = ['Bowl batch no.','Compartment batch no.','Vacuum pouch batch no.','Outer box batch no.'];
+
+let products = [], batchRecords = [], settings = {scriptUrl:'',stockCheckUrl:'',sites:[]};
+let editingId = null;
+let confirmCb = null;
+
+// ── Boot ──
+async function load(){
+  try{const d=localStorage.getItem(SK_PRODUCTS);if(d)products=JSON.parse(d);}catch(e){}
+  try{const d=localStorage.getItem(SK_RECORDS);if(d)batchRecords=JSON.parse(d);}catch(e){}
+  try{const d=localStorage.getItem(SK_SETTINGS);if(d)settings={scriptUrl:'',stockCheckUrl:'',sites:[],...JSON.parse(d)};}catch(e){}
+  if(SCRIPT_URL&&!settings.scriptUrl){settings.scriptUrl=SCRIPT_URL;saveLocalSettings();}
+  document.getElementById('s-script-url').value=settings.scriptUrl||'';
+  document.getElementById('s-stock-url').value=settings.stockCheckUrl||'';
+  updateSyncBadge(settings.scriptUrl?'ready':'no-url');
+  populateSiteDropdown();renderSitesList();
+  if(settings.scriptUrl){updateSyncBadge('syncing');await fetchProducts();updateSyncBadge('ready');}
+  renderProductList();
+}
+
+function saveLocalSettings(){localStorage.setItem(SK_SETTINGS,JSON.stringify(settings));}
+function persistProducts(){localStorage.setItem(SK_PRODUCTS,JSON.stringify(products));}
+function persistRecords(){localStorage.setItem(SK_RECORDS,JSON.stringify(batchRecords));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function fmtDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('en-GB');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function updateSyncBadge(state){
+  const el=document.getElementById('sync-status');
+  if(state==='syncing'){el.textContent='◌ syncing';el.style.color='#8a6500';}
+  else if(state==='synced'){el.textContent='✓ synced';el.style.color='#2d6e2d';}
+  else if(state==='error'){el.textContent='✗ error';el.style.color='#c0392b';}
+  else if(state==='no-url'){el.textContent='● local only';el.style.color='#b0ada5';}
+  else{el.textContent='● sheets';el.style.color='#2d6e2d';}
+}
+async function api(body){
+  const res=await fetch(settings.scriptUrl,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'text/plain'}});
+  return res.json();
+}
+async function apiGet(params){
+  const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const res=await fetch(settings.scriptUrl+'?'+qs);
+  return res.json();
+}
+async function fetchProducts(){
+  try{const j=await apiGet({action:'getProducts'});if(j.products){products=j.products;persistProducts();}}catch(e){}
+}
+// ── Tabs ──
+function showTab(t){
+  renderProductList(); // setup page always shows setup
+}
+function showSetupTab(t){
+  ['products','add','settings'].forEach(p=>{
+    document.getElementById('setup-'+p).style.display=p===t?'':'none';
+    document.getElementById('stab-'+p).classList.toggle('active',p===t);
+  });
+  if(t==='products')renderProductList();
+  if(t==='add'){resetAddForm();}
+}
+
+// ── Product grid (record tab) ──
+// ── Select product → show form ──
+// ── Submit record ──
+// ── History ──
+// ── Setup — product list ──
+function renderProductList(){
+  const c=document.getElementById('product-list');
+  if(!products.length){c.innerHTML='<div class="empty" style="padding:32px 0;">No products yet — tap "+ Add new".</div>';return;}
+  c.innerHTML=products.map(p=>`
+    <div class="product-setup-item">
+      <div class="product-setup-body">
+        <div class="product-setup-name">${p.name} <span class="${p.category==='cooked'?'cat-cooked':'cat-standard'}">${p.category==='cooked'?'🔥 Cooked':'Standard'}</span></div>
+        <div class="product-setup-meta">${(p.ingredients||[]).length} ingredients · ${p.pkgType==='bowl'?'Bowl packaging':'Standard packaging'}${p.labelUrl?' · Label ✓':''}</div>
+      </div>
+      <div class="product-setup-actions">
+        <button class="btn-sm" onclick="openEdit('${p.id}')">Edit</button>
+        <button class="btn-sm btn-danger-sm" onclick="confirmDeleteProduct('${p.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Ingredient row helpers ──
+function addIngRow(prefix,val=''){
+  const list=document.getElementById(prefix+'-ing-list');
+  const row=document.createElement('div');
+  row.className='recipe-ing-row';
+  row.innerHTML=`<input type="text" placeholder="Ingredient name" value="${val}"/><button class="btn-sm btn-danger-sm" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(row);
+}
+function getIngredients(prefix){
+  return Array.from(document.querySelectorAll('#'+prefix+'-ing-list .recipe-ing-row input')).map(i=>i.value.trim()).filter(Boolean);
+}
+function resetAddForm(){
+  document.getElementById('s-prod-name').value='';
+  document.getElementById('s-prod-category').value='standard';
+  document.getElementById('s-pkg-type').value='standard';
+  document.getElementById('s-label-url').value='';
+  document.getElementById('s-ing-list').innerHTML='';
+  document.getElementById('err-add-prod').style.display='none';
+  document.getElementById('add-form-title').textContent='New product';
+  document.getElementById('save-prod-btn').textContent='Save product';
+}
+
+// ── Save product ──
+async function saveProduct(){
+  const name=document.getElementById('s-prod-name').value.trim();
+  const err=document.getElementById('err-add-prod');
+  if(!name){err.style.display='';err.textContent='Please enter a product name.';return;}
+  err.style.display='none';
+  const btn=document.getElementById('save-prod-btn');
+  btn.textContent='Saving…';btn.disabled=true;
+  const prod={id:uid(),name,category:document.getElementById('s-prod-category').value||'standard',pkgType:document.getElementById('s-pkg-type').value,labelUrl:document.getElementById('s-label-url').value.trim(),ingredients:getIngredients('s')};
+  try{
+    if(settings.scriptUrl){
+      const r=await api({action:'saveProduct',product:prod});
+      if(r.result!=='success'){err.style.display='';err.textContent='Failed to save. Try again.';btn.textContent='Save product';btn.disabled=false;return;}
+    }
+    products.push(prod);persistProducts();
+    showToast(name+' added ✓');
+    resetAddForm();
+    showSetupTab('products');
+    renderProductGrid();renderProductList();
+  }catch(e){err.style.display='';err.textContent='No connection.';}
+  btn.textContent='Save product';btn.disabled=false;
+}
+
+// ── Edit product ──
+function openEdit(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  editingId=id;
+  document.getElementById('e-prod-name').value=p.name;
+  document.getElementById('e-prod-category').value=p.category||'standard';
+  document.getElementById('e-pkg-type').value=p.pkgType||'standard';
+  document.getElementById('e-label-url').value=p.labelUrl||'';
+  const list=document.getElementById('e-ing-list');list.innerHTML='';
+  (p.ingredients||[]).forEach(ing=>addIngRow('e',ing));
+  document.getElementById('err-edit-prod').style.display='none';
+  document.getElementById('edit-modal').style.display='flex';
+}
+function maybeCloseModal(e){if(e.target===document.getElementById('edit-modal'))closeModal();}
+function closeModal(){document.getElementById('edit-modal').style.display='none';editingId=null;}
+async function saveEdit(){
+  const name=document.getElementById('e-prod-name').value.trim();
+  const err=document.getElementById('err-edit-prod');
+  if(!name){err.style.display='';err.textContent='Name cannot be empty.';return;}
+  err.style.display='none';
+  const idx=products.findIndex(x=>x.id===editingId);if(idx<0)return;
+  const saveBtn=document.querySelector('#edit-modal .btn-primary');
+  saveBtn.textContent='Saving…';saveBtn.disabled=true;
+  const updated={...products[idx],name,category:document.getElementById('e-prod-category').value||'standard',pkgType:document.getElementById('e-pkg-type').value,labelUrl:document.getElementById('e-label-url').value.trim(),ingredients:getIngredients('e')};
+  try{
+    if(settings.scriptUrl)await api({action:'saveProduct',product:updated});
+    products[idx]=updated;persistProducts();
+    closeModal();renderProductList();renderProductGrid();showToast('Saved ✓');
+  }catch(e){err.style.display='';err.textContent='No connection.';}
+  saveBtn.textContent='Save changes';saveBtn.disabled=false;
+}
+
+// ── Delete ──
+function confirmDeleteProduct(id){
+  const p=products.find(x=>x.id===id);
+  document.getElementById('confirm-title').textContent='Delete product?';
+  document.getElementById('confirm-msg').textContent=`This will remove "${p?.name}" from all devices.`;
+  document.getElementById('confirm-ok-btn').textContent='Delete';
+  confirmCb=async()=>{
+    if(settings.scriptUrl)try{await api({action:'deleteProduct',id});}catch(e){}
+    products=products.filter(x=>x.id!==id);persistProducts();
+    renderProductList();renderProductGrid();showToast('Deleted');
+  };
+  document.getElementById('confirm-overlay').style.display='flex';
+}
+function confirmOk(){document.getElementById('confirm-overlay').style.display='none';if(confirmCb)confirmCb();confirmCb=null;}
+function confirmCancel(){document.getElementById('confirm-overlay').style.display='none';confirmCb=null;}
+
+// ── Sites ──
+function populateSiteDropdown(){
+  const sel=document.getElementById('r-site');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select site…</option>';
+  (settings.sites||[]).forEach(s=>{const opt=document.createElement('option');opt.value=s;opt.textContent=s;sel.appendChild(opt);});
+  if(cur)sel.value=cur;
+}
+function renderSitesList(){
+  const c=document.getElementById('sites-list');
+  if(!settings.sites||!settings.sites.length){c.innerHTML='<div style="font-size:13px;color:var(--text-muted);padding:4px 0;">No sites added yet.</div>';return;}
+  c.innerHTML=settings.sites.map((s,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;">${s}</span>
+      <button class="btn-sm btn-danger-sm" onclick="removeSite(${i})">✕</button>
+    </div>`).join('');
+}
+function addSite(){
+  const input=document.getElementById('new-site');
+  const val=input.value.trim();if(!val)return;
+  if((settings.sites||[]).includes(val)){showToast('Site already exists');return;}
+  if(!settings.sites)settings.sites=[];
+  settings.sites.push(val);saveLocalSettings();
+  input.value='';populateSiteDropdown();renderSitesList();showToast(val+' added ✓');
+}
+function removeSite(i){
+  settings.sites.splice(i,1);saveLocalSettings();
+  populateSiteDropdown();renderSitesList();
+}
+function saveSettings(){
+  settings.scriptUrl=document.getElementById('s-script-url').value.trim();
+  settings.stockCheckUrl=document.getElementById('s-stock-url').value.trim();
+  saveLocalSettings();
+  updateSyncBadge(settings.scriptUrl?'ready':'no-url');
+  if(settings.stockCheckUrl) fetchIngredientPhotos();
+  showToast('Settings saved ✓');
+}
+
+load();
+</script>
+</body>
+</html>
