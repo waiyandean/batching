@@ -215,13 +215,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div id="pkg-batches-list"></div>
       </div>
 
-      <!-- Temperature -->
-      <div class="card">
+      <!-- Temperature — standard products -->
+      <div id="temp-standard-card" class="card">
         <div class="card-label">Finished product temperature</div>
         <div class="temp-wrap">
           <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
           <span class="temp-unit">°C</span>
         </div>
+      </div>
+
+      <!-- Temperature — cooked products (logged separately via Temp Log) -->
+      <div id="temp-cooked-card" class="card" style="display:none;background:var(--warn-bg);border-color:var(--warn-border);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:20px;">🌡</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--warn-text);">Temperature checks required</div>
+            <div style="font-size:12px;color:var(--warn-text);opacity:.8;margin-top:2px;">Cooking &amp; cooling temps are recorded separately after production.</div>
+          </div>
+        </div>
+        <a href="temp-log.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-family:var(--font);color:var(--warn-text);background:rgba(255,255,255,.6);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:8px 14px;text-decoration:none;">Go to Temp Log →</a>
       </div>
 
       <!-- Label check -->
@@ -265,7 +277,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWjkxtMeMvMjlysBWiL7C4BMfUi6b_RGNDITDafmnP1XewrK9GGAEZuBCb_zS873Iu/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzlbbx063VjdeWhzFex-D_oBGRdRErozzmV8WOoo-72PjLg2bnI5M7eWrTg4BDGpeF/exec';
 const SK_PRODUCTS = 'batch_products_v1';
 const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
@@ -405,6 +417,10 @@ function selectProduct(id){
       <div class="ing-batch-name">${label}</div>
       <input class="ing-batch-input" type="text" id="pb_${i}" placeholder="Batch no." oninput="this.classList.toggle('filled',this.value.trim()!='')"/>
     </div>`).join('');
+  // Show/hide temp card based on category
+  const isCooked = p.category === 'cooked';
+  document.getElementById('temp-standard-card').style.display = isCooked ? 'none' : '';
+  document.getElementById('temp-cooked-card').style.display   = isCooked ? '' : 'none';
   // Reset other fields
   document.getElementById('r-product-batch').value='';
   document.getElementById('r-temp').value='';
@@ -440,14 +456,18 @@ function updatePendingBadge(){
   ).length;
   const link=document.getElementById('temp-log-link');
   const countEl=document.getElementById('pending-temps-count');
+  // Always show the link
+  link.style.display='';
   if(pending>0){
-    link.style.display='';
     link.style.borderColor='#f0d88a';
     link.style.color='var(--warn-text)';
     link.style.background='var(--warn-bg)';
     countEl.textContent='('+pending+')';
   }else{
-    link.style.display='none';
+    link.style.borderColor='var(--border)';
+    link.style.color='var(--text-muted)';
+    link.style.background='var(--bg)';
+    countEl.textContent='';
   }
 }
 // ── Submit record ──
@@ -460,13 +480,14 @@ async function submitRecord(){
   const labelCheck=document.getElementById('r-label-check').checked;
   const notes=document.getElementById('r-notes').value.trim();
   const p=products.find(x=>x.id===selectedProductId);
+  const isCooked=p&&p.category==='cooked';
   const err=document.getElementById('err-record');
   const missing=[];
   if(!date)missing.push('date');
   if(!site)missing.push('site');
   if(!staff)missing.push('staff name');
   if(!productBatch)missing.push('product batch number');
-  if(!temp)missing.push('finished product temperature');
+  if(!isCooked&&!temp)missing.push('finished product temperature');
   if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
   err.style.display='none';
 
@@ -486,7 +507,7 @@ async function submitRecord(){
   const record={
     id:uid(),date,site,staff,product:p.name,productCategory:p.category||'standard',productBatch,
     ingredientBatches,packagingBatches,
-    temp:parseFloat(temp),
+    temp:isCooked?null:parseFloat(temp),
     cookTemp:null,coolTemp:null,cookLoggedAt:null,coolLoggedAt:null,
     labelCheck,notes,savedAt:now,
     ingredientNames:(p.ingredients||[]),
