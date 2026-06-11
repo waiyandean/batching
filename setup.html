@@ -174,20 +174,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div class="card-label" id="add-form-title">New product</div>
         <div class="field"><label>Product name</label><input type="text" id="s-prod-name" placeholder="e.g. Chicken Ramen"/></div>
         <div class="field">
-          <label>Product category</label>
-          <select id="s-prod-category">
-            <option value="standard">Standard (no cooking required)</option>
-            <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Packaging type</label>
-          <select id="s-pkg-type">
-            <option value="standard">Standard — Pouch + Box</option>
-            <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
-          </select>
-        </div>
-        <div class="field">
           <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional — paste a link to the reference label</span></label>
           <input type="url" id="s-label-url" placeholder="https://…"/>
         </div>
@@ -228,20 +214,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="modal-title">Edit product <button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="field"><label>Product name</label><input type="text" id="e-prod-name"/></div>
     <div class="field">
-      <label>Product category</label>
-      <select id="e-prod-category">
-        <option value="standard">Standard (no cooking required)</option>
-        <option value="cooked">Cooked (cooking &amp; cooling temps required)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Packaging type</label>
-      <select id="e-pkg-type">
-        <option value="standard">Standard — Pouch + Box</option>
-        <option value="bowl">Bowl — Bowl + Compartment + Vacuum Pouch + Outer Box</option>
-      </select>
-    </div>
-    <div class="field">
       <label>Master label URL <span style="font-size:10px;font-family:monospace;color:var(--text-hint);">optional</span></label>
       <input type="url" id="e-label-url" placeholder="https://…"/>
     </div>
@@ -276,7 +248,6 @@ const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
 
 const PKG_STANDARD = ['Pouch batch no.','Box batch no.'];
-const PKG_BOWL     = ['Bowl batch no.','Compartment batch no.','Vacuum pouch batch no.','Outer box batch no.'];
 
 let products = [], batchRecords = [], settings = {scriptUrl:'',stockCheckUrl:'',sites:[]};
 let editingId = null;
@@ -360,8 +331,8 @@ function renderProductList(){
   c.innerHTML=products.map(p=>`
     <div class="product-setup-item">
       <div class="product-setup-body">
-        <div class="product-setup-name">${p.name} <span class="${p.category==='cooked'?'cat-cooked':'cat-standard'}">${p.category==='cooked'?'🔥 Cooked':'Standard'}</span></div>
-        <div class="product-setup-meta">${(p.ingredients||[]).length} ingredients · ${p.pkgType==='bowl'?'Bowl packaging':'Standard packaging'}${p.labelUrl?' · Label ✓':''}</div>
+        <div class="product-setup-name">${p.name}</div>
+        <div class="product-setup-meta">${(p.ingredients||[]).length} ingredients · Pouch + Box${p.labelUrl?' · Label ✓':''}</div>
       </div>
       <div class="product-setup-actions">
         <button class="btn-sm" onclick="openEdit('${p.id}')">Edit</button>
@@ -383,8 +354,6 @@ function getIngredients(prefix){
 }
 function resetAddForm(){
   document.getElementById('s-prod-name').value='';
-  document.getElementById('s-prod-category').value='standard';
-  document.getElementById('s-pkg-type').value='standard';
   document.getElementById('s-label-url').value='';
   document.getElementById('s-ing-list').innerHTML='';
   document.getElementById('err-add-prod').style.display='none';
@@ -400,7 +369,7 @@ async function saveProduct(){
   err.style.display='none';
   const btn=document.getElementById('save-prod-btn');
   btn.textContent='Saving…';btn.disabled=true;
-  const prod={id:uid(),name,category:document.getElementById('s-prod-category').value||'standard',pkgType:document.getElementById('s-pkg-type').value,labelUrl:document.getElementById('s-label-url').value.trim(),ingredients:getIngredients('s')};
+  const prod={id:uid(),name,category:'standard',pkgType:'standard',labelUrl:document.getElementById('s-label-url').value.trim(),ingredients:getIngredients('s')};
   try{
     if(settings.scriptUrl){
       const r=await api({action:'saveProduct',product:prod});
@@ -420,8 +389,6 @@ function openEdit(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   editingId=id;
   document.getElementById('e-prod-name').value=p.name;
-  document.getElementById('e-prod-category').value=p.category||'standard';
-  document.getElementById('e-pkg-type').value=p.pkgType||'standard';
   document.getElementById('e-label-url').value=p.labelUrl||'';
   const list=document.getElementById('e-ing-list');list.innerHTML='';
   (p.ingredients||[]).forEach(ing=>addIngRow('e',ing));
@@ -438,7 +405,7 @@ async function saveEdit(){
   const idx=products.findIndex(x=>x.id===editingId);if(idx<0)return;
   const saveBtn=document.querySelector('#edit-modal .btn-primary');
   saveBtn.textContent='Saving…';saveBtn.disabled=true;
-  const updated={...products[idx],name,category:document.getElementById('e-prod-category').value||'standard',pkgType:document.getElementById('e-pkg-type').value,labelUrl:document.getElementById('e-label-url').value.trim(),ingredients:getIngredients('e')};
+  const updated={...products[idx],name,category:'standard',pkgType:'standard',labelUrl:document.getElementById('e-label-url').value.trim(),ingredients:getIngredients('e')};
   try{
     if(settings.scriptUrl)await api({action:'saveProduct',product:updated});
     products[idx]=updated;persistProducts();
