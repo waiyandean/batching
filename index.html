@@ -152,7 +152,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <header class="app-header">
   <div class="app-title">Batch <span>Record</span></div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <a href="temp-log.html" id="temp-log-link" style="font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;display:none;">🌡 Temp Log <span id="pending-temps-count"></span></a>
     <a href="setup.html" style="font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;">Setup</a>
     <div class="sync-badge" id="sync-status">● sheets</div>
   </div>
@@ -191,7 +190,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;font-family:monospace;opacity:.7;margin-bottom:2px;">PRODUCT</div>
           <div style="font-size:16px;font-weight:500;" id="form-product-name"></div>
-          <div id="form-product-category" style="font-size:11px;font-family:monospace;opacity:.65;margin-top:3px;"></div>
         </div>
         <button onclick="deselectProduct()" style="background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;flex-shrink:0;">Change</button>
       </div>
@@ -222,38 +220,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div class="temp-wrap">
           <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;"/>
           <span class="temp-unit">°C</span>
-        </div>
-      </div>
-
-      <!-- Temperature — cooked products (logged separately via Temp Log) -->
-      <div id="temp-cooked-card" style="display:none;margin-bottom:12px;">
-        <div style="background:var(--warn-bg);border:1.5px solid var(--warn-border);border-radius:var(--radius);padding:16px;">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
-            <div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.6);border:1px solid var(--warn-border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🌡</div>
-            <div style="flex:1;">
-              <div style="font-size:14px;font-weight:500;color:var(--warn-text);margin-bottom:3px;">Temperature checks done separately</div>
-              <div style="font-size:12px;color:var(--warn-text);opacity:.75;line-height:1.5;">Cooking and cooling temps for this product are logged in the Temp Log — complete them after production is finished.</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-direction:column;">
-            <div style="display:flex;align-items:center;background:rgba(255,255,255,.5);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:10px 12px;">
-              <div style="flex:1;">
-                <div style="font-size:11px;font-family:monospace;letter-spacing:.06em;color:var(--warn-text);margin-bottom:1px;">AFTER COOKING</div>
-                <div style="font-size:12px;color:var(--warn-text);opacity:.75;">Log the core cooking temperature</div>
-              </div>
-              <span style="font-size:18px;">🔥</span>
-            </div>
-            <div style="display:flex;align-items:center;background:rgba(255,255,255,.5);border:1px solid var(--warn-border);border-radius:var(--radius-sm);padding:10px 12px;">
-              <div style="flex:1;">
-                <div style="font-size:11px;font-family:monospace;letter-spacing:.06em;color:var(--warn-text);margin-bottom:1px;">AFTER COOLING</div>
-                <div style="font-size:12px;color:var(--warn-text);opacity:.75;">Log once cooled to storage temp</div>
-              </div>
-              <span style="font-size:18px;">❄️</span>
-            </div>
-          </div>
-          <a href="temp-log.html" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;font-family:var(--font);color:var(--warn-text);background:rgba(255,255,255,.7);border:1.5px solid var(--warn-border);border-radius:var(--radius-sm);padding:11px 16px;text-decoration:none;margin-top:12px;">
-            <span>Open Temp Log</span><span style="font-size:16px;">→</span>
-          </a>
         </div>
       </div>
 
@@ -304,7 +270,6 @@ const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
 
 const PKG_STANDARD = ['Pouch batch no.','Box batch no.'];
-const PKG_BOWL     = ['Bowl batch no.','Compartment batch no.','Vacuum pouch batch no.','Outer box batch no.'];
 
 let products = [], batchRecords = [], settings = {scriptUrl:'',stockCheckUrl:'',sites:[]};
 let selectedProductId = null;
@@ -329,7 +294,6 @@ async function load(){
   if(fetches.length) await Promise.all(fetches);
   if(settings.scriptUrl) updateSyncBadge('ready');
   renderProductGrid();
-  updatePendingBadge();
 }
 
 function saveLocalSettings(){localStorage.setItem(SK_SETTINGS,JSON.stringify(settings));}
@@ -421,8 +385,6 @@ function selectProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   selectedProductId=id;
   document.getElementById('form-product-name').textContent=p.name;
-  // Category label in banner
-  document.getElementById('form-product-category').textContent=p.category==='cooked'?'🔥 Cooked product':'';
   // Product photo in banner
   const photoWrap=document.getElementById('form-product-photo-wrap');
   const prodPhoto=productPhotos[p.name];
@@ -444,19 +406,16 @@ function selectProduct(id){
     </div>`;
   }).join('');
   if(!(p.ingredients||[]).length){ingList.innerHTML='<div style="font-size:13px;color:var(--text-muted);">No ingredients set up for this product.</div>';}
-  // Packaging rows
-  const pkgFields=p.pkgType==='bowl'?PKG_BOWL:PKG_STANDARD;
+  // Packaging rows — always Pouch + Box
   const pkgList=document.getElementById('pkg-batches-list');
-  pkgList.innerHTML=pkgFields.map((label,i)=>`
+  pkgList.innerHTML=PKG_STANDARD.map((label,i)=>`
     <div class="ing-batch-row">
       <div class="ing-batch-name">${label}</div>
       <input class="ing-batch-input" type="text" id="pb_${i}" placeholder="Batch no." oninput="this.classList.toggle('filled',this.value.trim()!='')"/>
     </div>`).join('');
-  // Show/hide temp card based on category
-  const isCooked = p.category === 'cooked';
-  document.getElementById('temp-standard-card').style.display = isCooked ? 'none' : '';
-  document.getElementById('temp-cooked-card').style.display   = isCooked ? '' : 'none';
-  // Reset other fields
+  // Always show finished temp card
+  document.getElementById('temp-standard-card').style.display='';
+  // Reset fields
   document.getElementById('r-product-batch').value='';
   document.getElementById('r-temp').value='';
   // Label reference
@@ -475,8 +434,7 @@ function selectProduct(id){
   document.getElementById('err-record').style.display='none';
   document.getElementById('record-pick-product').style.display='none';
   document.getElementById('record-form').style.display='';
-  // Update submit button label based on category
-  document.getElementById('submit-batch-btn').textContent=isCooked?'Continue to Temp Log →':'Submit batch record';
+  document.getElementById('submit-batch-btn').textContent='Submit batch record';
 }
 function deselectProduct(){
   selectedProductId=null;
@@ -484,29 +442,6 @@ function deselectProduct(){
   document.getElementById('record-form').style.display='none';
 }
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
-function updatePendingBadge(){
-  const cutoff=Date.now()-48*60*60*1000;
-  const pending=batchRecords.filter(r=>
-    r.productCategory==='cooked'&&
-    new Date(r.savedAt).getTime()>cutoff&&
-    (r.cookTemp==null||r.coolTemp==null)
-  ).length;
-  const link=document.getElementById('temp-log-link');
-  const countEl=document.getElementById('pending-temps-count');
-  // Always show the link
-  link.style.display='';
-  if(pending>0){
-    link.style.borderColor='#f0d88a';
-    link.style.color='var(--warn-text)';
-    link.style.background='var(--warn-bg)';
-    countEl.textContent='('+pending+')';
-  }else{
-    link.style.borderColor='var(--border)';
-    link.style.color='var(--text-muted)';
-    link.style.background='var(--bg)';
-    countEl.textContent='';
-  }
-}
 // ── Submit record ──
 async function submitRecord(){
   const date=document.getElementById('r-date').value;
@@ -517,49 +452,37 @@ async function submitRecord(){
   const labelCheck=document.getElementById('r-label-check').checked;
   const notes=document.getElementById('r-notes').value.trim();
   const p=products.find(x=>x.id===selectedProductId);
-  const isCooked=p&&p.category==='cooked';
   const err=document.getElementById('err-record');
   const missing=[];
   if(!date)missing.push('date');
   if(!site)missing.push('site');
   if(!staff)missing.push('staff name');
   if(!productBatch)missing.push('product batch number');
-  if(!isCooked&&!temp)missing.push('finished product temperature');
+  if(!temp)missing.push('finished product temperature');
   if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
   err.style.display='none';
-
-  const pkgFields=p.pkgType==='bowl'?PKG_BOWL:PKG_STANDARD;
 
   const ingredientBatches=(p.ingredients||[]).map(ing=>({
     ingredient:ing,
     batch:document.getElementById('ib_'+slugify(ing))?.value.trim()||''
   }));
-  const packagingBatches=pkgFields.map((label,i)=>({
+  const packagingBatches=PKG_STANDARD.map((label,i)=>({
     label,batch:document.getElementById('pb_'+i)?.value.trim()||''
   }));
 
   const now=new Date().toISOString();
   const record={
-    id:uid(),date,site,staff,product:p.name,productCategory:p.category||'standard',productBatch,
+    id:uid(),date,site,staff,product:p.name,productCategory:'standard',productBatch,
     ingredientBatches,packagingBatches,
-    temp:isCooked?null:parseFloat(temp),
+    temp:parseFloat(temp),
     cookTemp:null,coolTemp:null,cookLoggedAt:null,coolLoggedAt:null,
     labelCheck,notes,savedAt:now,
     ingredientNames:(p.ingredients||[]),
-    pkgLabels:pkgFields
+    pkgLabels:PKG_STANDARD
   };
 
-  if(isCooked){
-    // Cooked products: stash as pending — only finalised when cook temp is entered in Temp Log
-    localStorage.setItem('pending_cooked_batch',JSON.stringify(record));
-    window.location.href='temp-log.html';
-    return;
-  }
-
-  // Standard products: save immediately as before
   batchRecords.unshift(record);
   persistRecords();
-  updatePendingBadge();
   showToast('Batch record saved ✓');
   deselectProduct();
 
@@ -599,7 +522,6 @@ function renderHistory(){
           ${r.temp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">TEMP </span><strong>${r.temp}°C</strong></div>`:''}
           ${r.cookTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOK </span><strong>${r.cookTemp}°C</strong></div>`:''}
           ${r.coolTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOL </span><strong>${r.coolTemp}°C</strong></div>`:''}
-          ${(r.productCategory==='cooked'&&r.cookTemp==null)?`<span style="font-size:11px;font-family:monospace;background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);border-radius:20px;padding:2px 8px;">⏳ Temps pending</span>`:''}
           <div>${r.labelCheck?'<span class="badge-ok">✓ Labels checked</span>':'<span class="badge-fail">✗ Labels not checked</span>'}</div>
         </div>
         ${r.notes?`<div style="font-size:13px;color:var(--text-muted);margin-top:8px;font-style:italic;">${r.notes}</div>`:''}
