@@ -150,7 +150,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 <header class="app-header">
-  <div class="app-title">Batch <span>Record</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="Logo.png" alt="Logo" style="height:32px;object-fit:contain;"/>
+    <div class="app-title">Batch <span>Record</span></div>
+  </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <a href="setup.html" style="font-size:12px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text-muted);text-decoration:none;">Setup</a>
     <div class="sync-badge" id="sync-status">● sheets</div>
