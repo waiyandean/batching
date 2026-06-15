@@ -48,7 +48,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .field{margin-bottom:12px;}
 .field:last-child{margin-bottom:0;}
 .field label{display:block;font-size:12px;font-family:monospace;color:var(--text-muted);margin-bottom:5px;letter-spacing:.03em;}
-.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid rgba(255,255,255,0.82);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);background:var(--glass-mid);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;box-shadow:0 2px 6px rgba(26,25,22,0.04),inset 0 1px 0 rgba(255,255,255,0.92),inset 0 -1px 0 rgba(224,221,214,0.3);color-scheme:light;}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);color-scheme:light;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(26,25,22,0.28);background:rgba(255,255,255,0.92);box-shadow:0 2px 10px rgba(26,25,22,0.06),inset 0 1px 0 rgba(255,255,255,0.95);}
 .field input::placeholder,.field textarea::placeholder{color:var(--text-hint);}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -77,7 +77,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
 
 /* Temperature field */
 .temp-wrap{display:flex;align-items:center;gap:8px;}
-.temp-wrap input{flex:1;padding:11px 13px;border:1px solid rgba(255,255,255,0.82);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);background:var(--glass-mid);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;box-shadow:0 2px 6px rgba(26,25,22,0.04),inset 0 1px 0 rgba(255,255,255,0.92);}
+.temp-wrap input{flex:1;padding:11px 13px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);}
 .temp-wrap input:focus{border-color:rgba(26,25,22,0.28);background:rgba(255,255,255,0.92);}
 .temp-unit{font-size:14px;color:var(--text-muted);font-family:monospace;flex-shrink:0;}
 
@@ -243,7 +243,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div id="temp-standard-card" class="card">
         <div class="card-label">Finished product temperature</div>
         <div class="temp-wrap">
-          <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" style="flex:1;padding:11px 13px;border:1px solid rgba(255,255,255,0.82);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;background:var(--glass-mid);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);box-shadow:0 2px 6px rgba(26,25,22,0.04),inset 0 1px 0 rgba(255,255,255,0.92);color:var(--text);"/>
+          <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" style="flex:1;padding:11px 13px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);color:var(--text);"/>
           <span class="temp-unit">°C</span>
         </div>
       </div>
@@ -279,7 +279,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
   <!-- ── HISTORY ── -->
   <div id="panel-records" style="display:none;">
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <input type="search" id="history-search" placeholder="Search product, staff, batch…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);outline:none;" oninput="renderHistory()"/>
+      <input type="search" id="history-search" placeholder="Search product, staff, batch…" style="flex:1;padding:10px 12px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);outline:none;color:var(--text);box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);" oninput="renderHistory()"/>
     </div>
     <div id="history-container"><div class="empty">No batch records submitted yet.</div></div>
   </div>
