@@ -197,27 +197,44 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <button onclick="deselectProduct()" style="background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;flex-shrink:0;">Change</button>
       </div>
 
-      <!-- Product batch number -->
+      <!-- 1. Product batch number -->
       <div class="card">
         <div class="card-label">Product batch number</div>
         <div class="field" style="margin-bottom:0;">
-          <input type="text" id="r-product-batch" placeholder="e.g. PB-2026-001"/>
+          <input type="text" id="r-product-batch" placeholder="e.g. 2605GA"/>
         </div>
       </div>
 
-      <!-- Ingredient batch numbers -->
+      <!-- 2. Equipment check -->
+      <div class="card">
+        <div class="card-label">Equipment check</div>
+        <label class="check-box" id="equip-check-wrap">
+          <input type="checkbox" id="r-equip-check" onchange="document.getElementById('equip-check-wrap').classList.toggle('checked',this.checked)"/>
+          <span>All equipment is in working order, clean, and free of any residue or water</span>
+        </label>
+      </div>
+
+      <!-- 3. Ingredient batch numbers -->
       <div class="card" id="ing-batches-card">
         <div class="card-label">Ingredient batch numbers</div>
         <div id="ing-batches-list"></div>
       </div>
 
-      <!-- Packaging batch numbers -->
+      <!-- 4. Packaging batch numbers -->
       <div class="card" id="pkg-batches-card">
         <div class="card-label">Packaging batch numbers</div>
         <div id="pkg-batches-list"></div>
       </div>
 
-      <!-- Temperature — standard products -->
+      <!-- 5. Number of packets produced -->
+      <div class="card">
+        <div class="card-label">Number of packets produced</div>
+        <div class="field" style="margin-bottom:0;">
+          <input type="number" id="r-packets" min="1" step="1" placeholder="e.g. 48"/>
+        </div>
+      </div>
+
+      <!-- 6. Finished product temperature -->
       <div id="temp-standard-card" class="card">
         <div class="card-label">Finished product temperature</div>
         <div class="temp-wrap">
@@ -226,7 +243,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
       </div>
 
-      <!-- Label check -->
+      <!-- 7. Label check -->
       <div class="card">
         <div class="card-label">Label check</div>
         <div id="label-ref-box" class="label-ref-box" style="display:none;">
@@ -237,7 +254,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
         <label class="check-box" id="label-check-wrap">
           <input type="checkbox" id="r-label-check" onchange="document.getElementById('label-check-wrap').classList.toggle('checked',this.checked)"/>
-          <span id="label-check-text">Labels checked and correct</span>
+          <span id="label-check-text">Checked for correct product name, dates, batch number and allergens</span>
         </label>
       </div>
 
@@ -422,17 +439,19 @@ function selectProduct(id){
   document.getElementById('temp-standard-card').style.display='';
   // Reset fields
   document.getElementById('r-product-batch').value='';
+  document.getElementById('r-equip-check').checked=false;
+  document.getElementById('equip-check-wrap').classList.remove('checked');
+  document.getElementById('r-packets').value='';
   document.getElementById('r-temp').value='';
   // Label reference
   const labelRefBox=document.getElementById('label-ref-box');
   if(p.labelUrl){
     document.getElementById('label-ref-link').href=p.labelUrl;
     labelRefBox.style.display='';
-    document.getElementById('label-check-text').textContent='Labels checked and match master label';
   }else{
     labelRefBox.style.display='none';
-    document.getElementById('label-check-text').textContent='Labels checked and correct';
   }
+  document.getElementById('label-check-text').textContent='Checked for correct product name, dates, batch number and allergens';
   document.getElementById('r-label-check').checked=false;
   document.getElementById('label-check-wrap').classList.remove('checked');
   document.getElementById('r-notes').value='';
@@ -453,6 +472,8 @@ async function submitRecord(){
   const site=document.getElementById('r-site').value;
   const staff=document.getElementById('r-staff').value.trim();
   const productBatch=document.getElementById('r-product-batch').value.trim();
+  const equipCheck=document.getElementById('r-equip-check').checked;
+  const packets=document.getElementById('r-packets').value;
   const temp=document.getElementById('r-temp').value;
   const labelCheck=document.getElementById('r-label-check').checked;
   const notes=document.getElementById('r-notes').value.trim();
@@ -463,6 +484,8 @@ async function submitRecord(){
   if(!site)missing.push('site');
   if(!staff)missing.push('staff name');
   if(!productBatch)missing.push('product batch number');
+  if(!equipCheck)missing.push('equipment check confirmation');
+  if(!packets)missing.push('number of packets produced');
   if(!temp)missing.push('finished product temperature');
   if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
   err.style.display='none';
@@ -478,7 +501,9 @@ async function submitRecord(){
   const now=new Date().toISOString();
   const record={
     id:uid(),date,site,staff,product:p.name,productCategory:'standard',productBatch,
+    equipCheck,
     ingredientBatches,packagingBatches,
+    packetsProduced:parseInt(packets),
     temp:parseFloat(temp),
     cookTemp:null,coolTemp:null,cookLoggedAt:null,coolLoggedAt:null,
     labelCheck,notes,savedAt:now,
@@ -524,9 +549,11 @@ function renderHistory(){
         ${r.packagingBatches.map(pb=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">${pb.label}</span><span>${pb.batch||'—'}</span></div>`).join('')}
         `:''}
         <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+          ${r.packetsProduced!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">PACKETS </span><strong>${r.packetsProduced}</strong></div>`:''}
           ${r.temp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">TEMP </span><strong>${r.temp}°C</strong></div>`:''}
           ${r.cookTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOK </span><strong>${r.cookTemp}°C</strong></div>`:''}
           ${r.coolTemp!=null?`<div style="font-size:13px;"><span style="color:var(--text-muted);font-family:monospace;font-size:11px;">COOL </span><strong>${r.coolTemp}°C</strong></div>`:''}
+          <div>${r.equipCheck?'<span class="badge-ok">✓ Equipment checked</span>':'<span class="badge-fail">✗ Equipment not confirmed</span>'}</div>
           <div>${r.labelCheck?'<span class="badge-ok">✓ Labels checked</span>':'<span class="badge-fail">✗ Labels not checked</span>'}</div>
         </div>
         ${r.notes?`<div style="font-size:13px;color:var(--text-muted);margin-top:8px;font-style:italic;">${r.notes}</div>`:''}
