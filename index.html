@@ -39,6 +39,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .btn{width:100%;padding:13px;border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);cursor:pointer;border:none;transition:opacity .15s;}
 .btn-primary{background:rgba(26,25,22,0.72);color:#fff;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border:1px solid rgba(255,255,255,0.14);box-shadow:0 4px 20px rgba(26,25,22,0.22),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 -1px 0 rgba(0,0,0,0.15);}
 .btn-primary:active{opacity:.82;}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;background:rgba(26,25,22,0.48);}
 .btn-secondary{background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--text);border:1px solid var(--border-strong);margin-top:10px;box-shadow:0 2px 8px rgba(26,25,22,0.05);}
 .btn-secondary:active{background:var(--glass-mid);}
 .btn-sm{padding:6px 12px;font-size:13px;width:auto;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--text-muted);cursor:pointer;font-family:var(--font);}
@@ -182,10 +183,10 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div class="card">
         <div class="card-label">Session details</div>
         <div class="field-row">
-          <div class="field"><label>Date</label><input type="date" id="r-date"/></div>
-          <div class="field"><label>Site</label><select id="r-site"><option value="">Select…</option></select></div>
+          <div class="field"><label>Date</label><input type="date" id="r-date" onchange="updateSubmitState()"/></div>
+          <div class="field"><label>Site</label><select id="r-site" onchange="updateSubmitState()"><option value="">Select…</option></select></div>
         </div>
-        <div class="field"><label>Staff name</label><input type="text" id="r-staff" placeholder="Your name"/></div>
+        <div class="field"><label>Staff name</label><input type="text" id="r-staff" placeholder="Your name" oninput="updateSubmitState()"/></div>
       </div>
       <!-- Product pick -->
       <div class="card">
@@ -211,7 +212,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div class="card">
         <div class="card-label">Product batch number</div>
         <div class="field" style="margin-bottom:0;">
-          <input type="text" id="r-product-batch" placeholder="e.g. 2605GA" oninput="updateProductBatchVisual()"/>
+          <input type="text" id="r-product-batch" placeholder="e.g. 2605GA" oninput="updateProductBatchVisual();updateSubmitState()"/>
         </div>
       </div>
 
@@ -219,7 +220,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div class="card">
         <div class="card-label">Equipment check</div>
         <label class="check-box" id="equip-check-wrap">
-          <input type="checkbox" id="r-equip-check" onchange="document.getElementById('equip-check-wrap').classList.toggle('checked',this.checked)"/>
+          <input type="checkbox" id="r-equip-check" onchange="document.getElementById('equip-check-wrap').classList.toggle('checked',this.checked);updateSubmitState()"/>
           <span>All equipment is in working order, clean, and free of any residue or water</span>
         </label>
       </div>
@@ -240,7 +241,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div class="card">
         <div class="card-label">Number of packets produced</div>
         <div class="field" style="margin-bottom:0;">
-          <input type="number" id="r-packets" min="1" step="1" placeholder="e.g. 48" oninput="updatePacketsVisual()"/>
+          <input type="number" id="r-packets" min="1" step="1" placeholder="e.g. 48" oninput="updatePacketsVisual();updateSubmitState()"/>
         </div>
       </div>
 
@@ -248,7 +249,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
       <div id="temp-standard-card" class="card">
         <div class="card-label">Finished product temperature</div>
         <div class="temp-wrap">
-          <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" oninput="updateTempVisual()" style="flex:1;padding:11px 13px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);color:var(--text);"/>
+          <input type="number" id="r-temp" step="0.1" placeholder="e.g. 3.5" oninput="updateTempVisual();updateSubmitState()" style="flex:1;padding:11px 13px;border:1px solid rgba(200,196,187,0.9);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);box-shadow:0 1px 4px rgba(26,25,22,0.08),inset 0 1px 0 rgba(255,255,255,0.95);color:var(--text);"/>
           <span class="temp-unit">°C</span>
         </div>
       </div>
@@ -263,7 +264,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
           </a>
         </div>
         <label class="check-box" id="label-check-wrap">
-          <input type="checkbox" id="r-label-check" onchange="document.getElementById('label-check-wrap').classList.toggle('checked',this.checked)"/>
+          <input type="checkbox" id="r-label-check" onchange="document.getElementById('label-check-wrap').classList.toggle('checked',this.checked);updateSubmitState()"/>
           <span id="label-check-text">Checked for correct product name, dates, batch number and allergens</span>
         </label>
       </div>
@@ -326,6 +327,7 @@ async function load(){
   if(fetches.length) await Promise.all(fetches);
   if(settings.scriptUrl) updateSyncBadge('ready');
   renderProductGrid();
+  updateSubmitState(); // Set initial disabled state
 }
 
 function saveLocalSettings(){localStorage.setItem(SK_SETTINGS,JSON.stringify(settings));}
@@ -472,11 +474,13 @@ function selectProduct(id){
   document.getElementById('record-pick-product').style.display='none';
   document.getElementById('record-form').style.display='';
   document.getElementById('submit-batch-btn').textContent='Submit batch record';
+  updateSubmitState();
 }
 function deselectProduct(){
   selectedProductId=null;
   document.getElementById('record-pick-product').style.display='';
   document.getElementById('record-form').style.display='none';
+  updateSubmitState(); // Disable button since no product selected
 }
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
 
@@ -515,6 +519,25 @@ function updatePacketsVisual(){
   if(!v){el.classList.remove('filled','invalid');return;}
   el.classList.toggle('filled',validatePackets(v));
   el.classList.toggle('invalid',v.length>0 && !validatePackets(v));
+}
+
+// ── Form completeness check ──
+function updateSubmitState(){
+  const date=document.getElementById('r-date').value;
+  const site=document.getElementById('r-site').value;
+  const staff=document.getElementById('r-staff').value.trim();
+  const productBatch=document.getElementById('r-product-batch').value.trim();
+  const equipCheck=document.getElementById('r-equip-check').checked;
+  const packets=document.getElementById('r-packets').value;
+  const temp=document.getElementById('r-temp').value;
+  const labelCheck=document.getElementById('r-label-check').checked;
+  
+  const btn=document.getElementById('submit-batch-btn');
+  const canSubmit = date && site && staff && selectedProductId &&
+    validateProductBatch(productBatch) && equipCheck &&
+    validatePackets(packets) && validateTemp(temp) && labelCheck;
+  
+  btn.disabled = !canSubmit;
 }
 // ── Submit record ──
 async function submitRecord(){
