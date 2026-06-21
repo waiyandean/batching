@@ -473,6 +473,9 @@ function deselectProduct(){
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
 // ── Submit record ──
 async function submitRecord(){
+  const btn=document.getElementById('submit-batch-btn');
+  btn.disabled=true;
+  btn.textContent='Saving…';
   const date=document.getElementById('r-date').value;
   const site=document.getElementById('r-site').value;
   const staff=document.getElementById('r-staff').value.trim();
@@ -484,6 +487,13 @@ async function submitRecord(){
   const notes=document.getElementById('r-notes').value.trim();
   const p=products.find(x=>x.id===selectedProductId);
   const err=document.getElementById('err-record');
+  if(!p){
+    err.style.display='';
+    err.textContent='Product not selected. Please go back and select a product.';
+    btn.disabled=false;
+    btn.textContent='Submit batch record';
+    return;
+  }
   const missing=[];
   if(!date)missing.push('date');
   if(!site)missing.push('site');
@@ -492,7 +502,13 @@ async function submitRecord(){
   if(!equipCheck)missing.push('equipment check confirmation');
   if(!packets)missing.push('number of packets produced');
   if(!temp)missing.push('finished product temperature');
-  if(missing.length){err.style.display='';err.textContent='Please fill in: '+missing.join(', ');return;}
+  if(missing.length){
+    err.style.display='';
+    err.textContent='Please fill in: '+missing.join(', ');
+    btn.disabled=false;
+    btn.textContent='Submit batch record';
+    return;
+  }
   err.style.display='none';
 
   const ingredientBatches=(p.ingredients||[]).map(ing=>({
@@ -518,16 +534,38 @@ async function submitRecord(){
 
   batchRecords.unshift(record);
   persistRecords();
-  showToast('Batch record saved ✓');
-  deselectProduct();
-
-  if(!settings.scriptUrl){updateSyncBadge('no-url');return;}
+  if(!settings.scriptUrl){
+    showToast('Batch record saved (offline) ✓');
+    deselectProduct();
+    updateSyncBadge('no-url');
+    btn.disabled=false;
+    btn.textContent='Submit batch record';
+    return;
+  }
   updateSyncBadge('syncing');
   try{
     const j=await api({action:'saveBatchRecord',record});
-    updateSyncBadge(j.result==='success'?'synced':'error');
+    if(j.result==='success'){
+      showToast('Batch record saved ✓');
+      updateSyncBadge('synced');
+    }else{
+      err.style.display='';
+      err.textContent='Failed to sync to Sheets. Record saved locally.';
+      updateSyncBadge('error');
+    }
     setTimeout(()=>updateSyncBadge('ready'),4000);
-  }catch(e){updateSyncBadge('error');setTimeout(()=>updateSyncBadge('ready'),4000);}
+    deselectProduct();
+    btn.disabled=false;
+    btn.textContent='Submit batch record';
+  }catch(e){
+    err.style.display='';
+    err.textContent='No connection. Record saved locally.';
+    updateSyncBadge('error');
+    setTimeout(()=>updateSyncBadge('no-url'),4000);
+    deselectProduct();
+    btn.disabled=false;
+    btn.textContent='Submit batch record';
+  }
 }
 
 // ── History ──
