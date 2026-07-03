@@ -1,0 +1,4 @@
+GOOGLE_CLIENT_EMAIL="batching-sa@your-project.iam.gserviceaccount.com"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEv...\n-----END PRIVATE KEY-----\n"
+GOOGLE_SHEET_ID="put a DUPLICATE test sheet's ID here, not the real one"
+ALLOWED_ORIGIN="https://waiyandean.github.io"
