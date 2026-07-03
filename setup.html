@@ -188,7 +188,7 @@ a.back-link{font-size:12px;font-family:monospace;background:var(--glass);backdro
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNlADNkIgxHaa789IGfWDRjcke1yftuIqePVVPsaVz9XpgxR-U0w0NsUJ7JrfiKO-J/exec';
+const SCRIPT_URL = 'https://batching-api.waiyandean.workers.dev';
 const SK_PRODUCTS = 'batch_products_v1';
 const SK_RECORDS  = 'batch_records_v1';
 const SK_SETTINGS = 'batch_settings_v1';
@@ -204,7 +204,7 @@ async function load(){
   try{const d=localStorage.getItem(SK_PRODUCTS);if(d)products=JSON.parse(d);}catch(e){}
   try{const d=localStorage.getItem(SK_RECORDS);if(d)batchRecords=JSON.parse(d);}catch(e){}
   try{const d=localStorage.getItem(SK_SETTINGS);if(d)settings={scriptUrl:'',stockCheckUrl:'',sites:[],...JSON.parse(d)};}catch(e){}
-  if(SCRIPT_URL&&!settings.scriptUrl){settings.scriptUrl=SCRIPT_URL;saveLocalSettings();}
+  if(SCRIPT_URL&&settings.scriptUrl!==SCRIPT_URL){settings.scriptUrl=SCRIPT_URL;saveLocalSettings();}
   document.getElementById('s-script-url').value=settings.scriptUrl||'';
   document.getElementById('s-stock-url').value=settings.stockCheckUrl||'';
   updateSyncBadge(settings.scriptUrl?'ready':'no-url');

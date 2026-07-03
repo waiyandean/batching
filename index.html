@@ -296,7 +296,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webki
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL      = 'https://script.google.com/macros/s/AKfycbw5zJQDK6X038VNeKDXtD6giuOTI639mNZe7LDjkWbtDjAZIHXe5RU44ZIvb_kjzvqy/exec';
+const SCRIPT_URL      = 'https://batching-api.waiyandean.workers.dev';
 const STOCK_CHECK_URL = 'https://script.google.com/macros/s/AKfycbx8donnPrSqM5aI5d8dMSMIBdOWuITzljNxTRj46div5S_VfuvODutQhQGUcHHXN5bJ_A/exec';
 const SK_PRODUCTS = 'batch_products_v1';
 const SK_RECORDS  = 'batch_records_v1';
@@ -314,7 +314,7 @@ async function load(){
   try{const d=localStorage.getItem(SK_PRODUCTS);if(d)products=JSON.parse(d);}catch(e){}
   try{const d=localStorage.getItem(SK_RECORDS);if(d)batchRecords=JSON.parse(d);}catch(e){}
   try{const d=localStorage.getItem(SK_SETTINGS);if(d)settings={scriptUrl:'',stockCheckUrl:'',sites:[],...JSON.parse(d)};}catch(e){}
-  if(SCRIPT_URL&&!settings.scriptUrl){settings.scriptUrl=SCRIPT_URL;saveLocalSettings();}
+  if(SCRIPT_URL&&settings.scriptUrl!==SCRIPT_URL){settings.scriptUrl=SCRIPT_URL;saveLocalSettings();}
   if(STOCK_CHECK_URL&&!settings.stockCheckUrl){settings.stockCheckUrl=STOCK_CHECK_URL;saveLocalSettings();}
   document.getElementById('r-date').valueAsDate=new Date();
   updateSyncBadge(settings.scriptUrl?'ready':'no-url');
