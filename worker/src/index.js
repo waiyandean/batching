@@ -7,7 +7,13 @@ import { updateBatchTemp } from './handlers/updateBatchTemp.js';
 
 export default {
   async fetch(request, env) {
-    const corsHeaders = { 'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || 'https://waiyandean.github.io' };
+    const allowedOrigins = (env.ALLOWED_ORIGIN || 'https://waiyandean.github.io')
+      .split(',')
+      .map((o) => o.trim());
+    const requestOrigin = request.headers.get('Origin') || '';
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0],
+    };
     const json = (obj) =>
       new Response(JSON.stringify(obj), {
         status: 200,
