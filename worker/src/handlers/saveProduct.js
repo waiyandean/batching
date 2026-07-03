@@ -3,6 +3,7 @@ import { getSheetsMeta, ensureSheetExists, ensureHeaders } from '../sheetSetup.j
 import { a1Quote, colToLetter, parseAppendedRowNum } from '../sheetUtils.js';
 import { instantToSerial } from '../dateSerial.js';
 import { SHEET_PRODUCTS, PRODUCTS_HEADERS, SHEET_TIMEZONE, DATETIME_FORMAT } from '../constants.js';
+import { invalidateProductsCache } from '../setupCache.js';
 
 export async function saveProduct(env, product) {
   if (!product) throw new Error('No product data');
@@ -69,5 +70,6 @@ export async function saveProduct(env, product) {
     ]);
   }
 
+  await invalidateProductsCache(env);
   return { result: 'success' };
 }

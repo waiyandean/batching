@@ -2,6 +2,7 @@ import { valuesGet, batchUpdate } from '../sheetsClient.js';
 import { getSheetsMeta } from '../sheetSetup.js';
 import { a1Quote } from '../sheetUtils.js';
 import { SHEET_PRODUCTS } from '../constants.js';
+import { invalidateProductsCache } from '../setupCache.js';
 
 export async function deleteProduct(env, id) {
   const meta = await getSheetsMeta(env);
@@ -20,5 +21,6 @@ export async function deleteProduct(env, id) {
       },
     },
   ]);
+  await invalidateProductsCache(env);
   return { result: 'success' };
 }

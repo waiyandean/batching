@@ -4,3 +4,7 @@ name = "batching-api"
 main = "src/index.js"
 compatibility_date = "2026-07-03"
 workers_dev = true
+
+[[kv_namespaces]]
+binding = "SETUP_CACHE"
+id = "6b64ca52611e43a0b9d70e615c657de2"

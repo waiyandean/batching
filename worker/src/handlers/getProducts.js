@@ -1,16 +1,26 @@
 import { valuesGet, isUnknownRangeError } from '../sheetsClient.js';
 import { a1Quote } from '../sheetUtils.js';
 import { SHEET_PRODUCTS } from '../constants.js';
+import { getCachedProducts, setCachedProducts } from '../setupCache.js';
 
 export async function getProducts(env) {
+  const cached = await getCachedProducts(env);
+  if (cached) return { result: 'success', products: cached };
+
   let values;
   try {
     values = await valuesGet(env, `${a1Quote(SHEET_PRODUCTS)}!1:100000`);
   } catch (err) {
-    if (isUnknownRangeError(err)) return { result: 'success', products: [] };
+    if (isUnknownRangeError(err)) {
+      await setCachedProducts(env, []);
+      return { result: 'success', products: [] };
+    }
     throw err;
   }
-  if (values.length <= 1) return { result: 'success', products: [] };
+  if (values.length <= 1) {
+    await setCachedProducts(env, []);
+    return { result: 'success', products: [] };
+  }
 
   const headers = values[0].map(String);
   const rows = values.slice(1);
@@ -40,5 +50,6 @@ export async function getProducts(env) {
       ingredients,
     });
   }
+  await setCachedProducts(env, products);
   return { result: 'success', products };
 }
