@@ -1,0 +1,12 @@
+{
+  "name": "batching-worker",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "^4"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  }
+}
