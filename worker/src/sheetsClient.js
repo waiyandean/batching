@@ -53,10 +53,17 @@ export async function getMeta(env, fields) {
 }
 
 export async function valuesGet(env, range, opts = {}) {
+  return valuesGetFrom(env, env.GOOGLE_SHEET_ID, range, opts);
+}
+
+// Same as valuesGet but against an explicit spreadsheet id (the batching worker
+// otherwise only ever touches env.GOOGLE_SHEET_ID). Used by the catalog read
+// path, which lives in the shared stock-check sheet, not the batching sheet.
+export async function valuesGetFrom(env, spreadsheetId, range, opts = {}) {
   const params = new URLSearchParams();
   if (opts.valueRenderOption) params.set('valueRenderOption', opts.valueRenderOption);
   const qs = params.toString();
-  const url = `${BASE}/${env.GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}${qs ? '?' + qs : ''}`;
+  const url = `${BASE}/${spreadsheetId}/values/${encodeURIComponent(range)}${qs ? '?' + qs : ''}`;
   const data = await request(env, 'GET', url);
   return data.values || [];
 }
