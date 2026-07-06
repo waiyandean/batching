@@ -1,3 +1,5 @@
+import { getAccessToken } from '../auth.js';
+
 // Photo handling for the catalog: (1) parse a Google Drive file id out of the
 // URLs stored in the sheet, (2) rewrite catalog photo fields to point at this
 // Worker's own image proxy, (3) serve that proxy with a long-lived Cache API
@@ -30,45 +32,76 @@ export function rewritePhotos(items, origin) {
   });
 }
 
-const IMAGE_TTL_SECONDS = 604800; // 7 days — Drive thumbnails are effectively immutable per file id
+const IMAGE_TTL_SECONDS = 604800; // 7 days — a photo per file id is effectively immutable
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+// Bump to invalidate every cached image at once (edge Cache API entries live up
+// to IMAGE_TTL_SECONDS). v2: switched from full-res alt=media originals to
+// small thumbnailLink thumbnails — v1 entries must not be served.
+const CACHE_VERSION = 'v2';
 
 // GET /catalog/image/<fileId>[?sz=w200]
 //
-// KNOWN LIMITATION (verified 2026-07-06): the stock-check photos live in a
-// Google WORKSPACE Drive, and Google redirects cookieless / datacenter-IP
-// fetches of `drive.google.com/thumbnail?id=...` to an accounts.google.com
-// sign-in page — so a naive server-side fetch gets HTML, not JPEG bytes. The
-// service account can't read them via the Drive API either (Drive API is
-// disabled on the SA's GCP project AND the StockCheckPhotos folder isn't
-// shared with the SA). Until that's unblocked (see PLAN.md Gotcha), this proxy
-// DETECTS the non-image response and 302-redirects the browser back to the
-// Drive thumbnail, which the browser loads exactly as it does today — i.e. it
-// degrades gracefully to current behaviour and never serves a broken image.
-export async function handleCatalogImage(request, ctx, fileId) {
+// Fetches a small photo THUMBNAIL via the Drive API using the service account
+// and caches it long-TTL in the edge Cache API, so warm photo grids render well
+// under 500ms instead of the ~5s the direct Drive thumbnail requests cost. This
+// needs the SA to have Drive read access (Drive API enabled on the SA project +
+// the StockCheckPhotos folder shared with it).
+//
+// We use the Drive `thumbnailLink` (a short-lived signed URL Google serves at
+// ~200px, tens of KB) rather than `alt=media` — the originals are full-res (one
+// product PNG is 15 MB!), so serving originals would be far slower than today.
+// We fetch the link's BYTES server-side and cache those, so link expiry never
+// matters for cached entries.
+//
+// GRACEFUL FALLBACK: a browser can load `drive.google.com/thumbnail?id=...`
+// directly (with its own Google cookies) even for files the SA can't read, but
+// a cookieless server-side fetch of that URL just gets a sign-in page. So for
+// any file the SA can't read (404/403) — e.g. photos that live outside the
+// shared folder — we 302-redirect the browser back to the Drive thumbnail,
+// which loads exactly as it does today. Never a broken image, never a
+// regression; those files just don't get the speed-up until they're shared.
+export async function handleCatalogImage(request, env, ctx, fileId) {
   if (!fileId || !/^[A-Za-z0-9_-]+$/.test(fileId)) {
     return new Response('bad file id', { status: 400 });
   }
   const sz = new URL(request.url).searchParams.get('sz') || 'w200';
-  const driveUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=${encodeURIComponent(sz)}`;
+  const driveThumb = `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=${encodeURIComponent(sz)}`;
 
   const cache = caches.default;
-  // Normalise the cache key to just method+URL so it hits regardless of
-  // per-request headers (Referer, etc.).
-  const cacheKey = new Request(new URL(request.url).toString(), { method: 'GET' });
+  // Synthetic, versioned cache key: independent of request host/headers/sz so it
+  // hits consistently, and CACHE_VERSION lets us purge all entries at once.
+  const cacheKey = new Request(`https://catalog-image-cache.internal/${CACHE_VERSION}/${fileId}`, { method: 'GET' });
   const hit = await cache.match(cacheKey);
   if (hit) return hit;
 
+  // Step 1: ask the Drive API (as the SA) for this file's thumbnailLink.
+  let thumbUrl;
+  try {
+    const token = await getAccessToken(env, DRIVE_SCOPE);
+    const metaRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?fields=thumbnailLink&supportsAllDrives=true`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!metaRes.ok) return Response.redirect(driveThumb, 302); // 404/403 — SA can't read it
+    thumbUrl = (await metaRes.json()).thumbnailLink;
+    if (!thumbUrl) return Response.redirect(driveThumb, 302);
+    // thumbnailLink defaults to =s220; ask for ~200px wide to match the sheet's
+    // original sz=w200 (keeps the file to tens of KB).
+    thumbUrl = thumbUrl.replace(/=s\d+$/, '=w200');
+  } catch (_) {
+    return Response.redirect(driveThumb, 302);
+  }
+
+  // Step 2: fetch the thumbnail bytes (the signed link needs no auth header).
   let upstream;
   try {
-    upstream = await fetch(driveUrl, { redirect: 'follow' });
+    upstream = await fetch(thumbUrl);
   } catch (_) {
-    return Response.redirect(driveUrl, 302);
+    return Response.redirect(driveThumb, 302);
   }
   const ct = upstream.headers.get('Content-Type') || '';
   if (!upstream.ok || !ct.startsWith('image/')) {
-    // Got the sign-in interstitial (or an error) — fall back to letting the
-    // browser fetch Drive directly. Not cached (this is the failure path).
-    return Response.redirect(driveUrl, 302);
+    return Response.redirect(driveThumb, 302);
   }
 
   const body = await upstream.arrayBuffer();

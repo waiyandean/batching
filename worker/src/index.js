@@ -32,7 +32,7 @@ export default {
       // isn't wrapped in a JSON response.
       if (path.startsWith('/catalog/image/')) {
         const fileId = decodeURIComponent(path.slice('/catalog/image/'.length));
-        return handleCatalogImage(request, ctx, fileId);
+        return handleCatalogImage(request, env, ctx, fileId);
       }
       // Catalog JSON: GET /catalog?action=getIngredients|getFinProducts|getSites.
       // Same query shape the frontends already send the Apps Script, so the

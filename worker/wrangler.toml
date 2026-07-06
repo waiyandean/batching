@@ -14,8 +14,8 @@ id = "6b64ca52611e43a0b9d70e615c657de2"
 # Not a secret (sheet id is not sensitive; it's in PLAN.md). The SA
 # (GOOGLE_CLIENT_EMAIL secret) must be shared on this sheet as Editor.
 STOCKCHECK_SHEET_ID = "14S3oUk5d_uNtOXSBAmxXIYSXJHXQewTsN0gIZICghqQ"
-# Photo proxy toggle. "false" = catalog returns original Drive photo URLs
-# (photos load from Drive as today). Set "true" only after the SA can read the
-# StockCheckPhotos Drive files (enable Drive API on the SA project + share the
-# folder with the SA) — see PLAN.md Phase-1 image-proxy blocker.
-CATALOG_IMAGE_PROXY = "false"
+# Photo proxy toggle. "true" = catalog rewrites photo URLs to /catalog/image/<id>,
+# which serves the bytes via the SA's Drive access, cached long-TTL. Files the SA
+# can't read fall back to loading from Drive directly (see catalog/images.js).
+# Enabled 2026-07-06 after the SA was granted Drive read access.
+CATALOG_IMAGE_PROXY = "true"
